@@ -1,3 +1,6 @@
+# TravelApp
+
+![CI Status](https://github.com/Oussamabenbella/travelapp-with-spring/actions/workflows/maven.yml/badge.svg)
 # TravelApp - Documentation de déploiement
 
 ## Architecture
