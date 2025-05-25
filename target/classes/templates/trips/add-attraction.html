@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Ajouter des attractions au voyage - TravelAppV2')">
+    <title>Ajouter des attractions au voyage - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <!-- Titre et navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/trips}">Mes Voyages</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{'/trips/view/' + ${trip.id}}" th:text="${trip.title}">Voyage à Paris</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Ajouter des attractions</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="display-5 mb-3">
+                    <i class="fas fa-plus-circle me-3 text-primary"></i>
+                    Ajouter des attractions
+                </h1>
+                <p class="lead">
+                    Ajoutez des attractions à votre voyage <strong th:text="${trip.title}">Voyage à Paris</strong> pour personnaliser votre itinéraire.
+                </p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Liste des attractions disponibles -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-camera me-2 text-primary"></i>Attractions disponibles
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Barre de recherche -->
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchAttraction" placeholder="Rechercher une attraction...">
+                                    <button class="btn btn-outline-primary" type="button">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Message si aucune attraction disponible -->
+                        <div th:if="${#lists.isEmpty(availableAttractions)}" class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Aucune attraction n'est disponible pour cette destination. 
+                            <a th:href="@{/attractions}" class="alert-link">Voir toutes les attractions</a>.
+                        </div>
+                        
+                        <!-- Liste des attractions disponibles -->
+                        <div th:unless="${#lists.isEmpty(availableAttractions)}" class="attraction-list">
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                <div class="col attraction-item" th:each="attraction : ${availableAttractions}" 
+                                     th:unless="${trip.attractions != null && trip.attractions.contains(attraction)}">
+                                    <div class="card h-100">
+                                        <div class="row g-0">
+                                            <div class="col-md-4">
+                                                <img th:if="${attraction.imageUrl != null}" th:src="${attraction.imageUrl}" 
+                                                     class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="Image attraction">
+                                                <div th:unless="${attraction.imageUrl != null}" 
+                                                     class="bg-light d-flex align-items-center justify-content-center h-100 rounded-start">
+                                                    <i class="fas fa-camera fa-2x text-muted"></i>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="card-body">
+                                                    <h5 class="card-title" th:text="${attraction.name}">Nom de l'attraction</h5>
+                                                    <p class="card-text small mb-1" th:if="${attraction.location != null}">
+                                                        <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                                                        <span th:text="${attraction.location}">Localisation</span>
+                                                    </p>
+                                                    <p class="card-text small mb-1" th:if="${attraction.price != null}">
+                                                        <i class="fas fa-tag me-1 text-primary"></i>
+                                                        <span th:text="${#numbers.formatDecimal(attraction.price, 1, 2) + ' €'}">15.00 €</span>
+                                                    </p>
+                                                    <p class="card-text small" th:if="${attraction.rating != null}">
+                                                        <i class="fas fa-star me-1 text-warning"></i>
+                                                        <span th:text="${attraction.rating} + ' / 5'">4.5 / 5</span>
+                                                    </p>
+                                                    <div class="d-flex justify-content-between align-items-end mt-2">
+                                                        <a th:href="@{'/attractions/' + ${attraction.id}}" class="btn btn-sm btn-outline-info">
+                                                            <i class="fas fa-info-circle me-1"></i>Détails
+                                                        </a>
+                                                        <form th:action="@{'/trips/' + ${trip.id} + '/add-attraction'}" method="post">
+                                                            <input type="hidden" name="attractionId" th:value="${attraction.id}">
+                                                            <button type="submit" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-plus me-1"></i>Ajouter
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panneau latéral -->
+            <div class="col-lg-4">
+                <!-- Résumé du voyage -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-route me-2 text-primary"></i>Résumé du voyage
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2" th:text="${trip.title}">Titre du voyage</h6>
+                        
+                        <div class="mb-3" th:if="${trip.destination != null}">
+                            <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                            <span th:text="${trip.destination.name}">Destination</span>
+                        </div>
+                        
+                        <div class="mb-3" th:if="${trip.startDate != null && trip.endDate != null}">
+                            <i class="fas fa-calendar-alt me-1 text-muted"></i>
+                            <span th:text="${#temporals.format(trip.startDate, 'dd/MM/yyyy')}">01/01/2023</span>
+                            <i class="fas fa-arrow-right mx-1 text-muted small"></i>
+                            <span th:text="${#temporals.format(trip.endDate, 'dd/MM/yyyy')}">07/01/2023</span>
+                            <div class="text-muted small">
+                                <span th:text="${trip.startDate.until(trip.endDate).getDays() + 1}">7</span> jours
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" th:if="${trip.budget != null}">
+                            <i class="fas fa-money-bill-wave me-1 text-muted"></i>
+                            <span th:text="${#numbers.formatDecimal(trip.budget, 1, 2) + ' €'}">1500.00 €</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Attractions déjà ajoutées -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-check-circle me-2 text-success"></i>
+                            Attractions déjà sélectionnées
+                            <span class="badge bg-secondary rounded-pill ms-2" th:text="${#lists.size(trip.attractions)}">0</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(trip.attractions)}" class="text-center py-3">
+                            <div class="text-muted">
+                                <i class="fas fa-info-circle mb-2 fa-2x"></i>
+                                <p>Aucune attraction n'a encore été ajoutée à ce voyage.</p>
+                            </div>
+                        </div>
+                        
+                        <div th:unless="${#lists.isEmpty(trip.attractions)}" class="list-group list-group-flush">
+                            <div class="list-group-item p-2" th:each="attraction : ${trip.attractions}">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2" style="width: 40px; height: 40px;">
+                                        <img th:if="${attraction.imageUrl != null}" th:src="${attraction.imageUrl}" 
+                                             class="img-fluid rounded" style="width: 40px; height: 40px; object-fit: cover;" alt="">
+                                        <div th:unless="${attraction.imageUrl != null}" 
+                                             class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                             style="width: 40px; height: 40px;">
+                                            <i class="fas fa-camera text-muted"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 text-truncate" th:text="${attraction.name}">Nom de l'attraction</h6>
+                                        <small class="text-muted" th:if="${attraction.price != null}" 
+                                               th:text="${#numbers.formatDecimal(attraction.price, 1, 2) + ' €'}">15.00 €</small>
+                                    </div>
+                                    <a th:href="@{'/trips/' + ${trip.id} + '/remove-attraction/' + ${attraction.id}}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Voulez-vous vraiment retirer cette attraction de votre voyage ?');">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-grid gap-2">
+                            <a th:href="@{'/trips/view/' + ${trip.id}}" class="btn btn-primary">
+                                <i class="fas fa-check me-2"></i>Terminer la sélection
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Conseils -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-lightbulb me-2 text-warning"></i>Conseils
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle me-2 text-success"></i>
+                                Choisissez des attractions variées pour diversifier votre expérience.
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle me-2 text-success"></i>
+                                Tenez compte de la localisation des attractions pour optimiser vos déplacements.
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle me-2 text-success"></i>
+                                N'oubliez pas de vérifier si des réservations sont nécessaires pour certaines attractions.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- Script de recherche -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchAttraction');
+        const attractionItems = document.querySelectorAll('.attraction-item');
+        
+        searchInput.addEventListener('keyup', function() {
+            const searchValue = this.value.toLowerCase();
+            
+            attractionItems.forEach(item => {
+                const attractionName = item.querySelector('.card-title').textContent.toLowerCase();
+                const attractionLocation = item.querySelector('.card-text:nth-child(2)') ? 
+                    item.querySelector('.card-text:nth-child(2)').textContent.toLowerCase() : '';
+                
+                if (attractionName.includes(searchValue) || attractionLocation.includes(searchValue)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

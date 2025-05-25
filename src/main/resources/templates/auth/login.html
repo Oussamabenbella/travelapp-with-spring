@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head(title='Connexion - Travel With Us')">
+    <title>Connexion - Travel With Us</title>
+</head>
+<body>
+    <!-- Menu de navigation (sans les options nécessitant connexion) -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3><i class="fas fa-sign-in-alt me-2"></i> Connexion</h3>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Messages d'alerte -->
+                        <div th:if="${param.error}" class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> Nom d'utilisateur ou mot de passe incorrect.
+                        </div>
+                        
+                        <div th:if="${param.logout}" class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> Vous avez été déconnecté avec succès.
+                        </div>
+                        
+                        <div th:if="${success}" class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> <span th:text="${success}">Opération réussie.</span>
+                        </div>
+                        
+                        <!-- Formulaire de connexion -->
+                        <form th:action="@{/login}" method="post" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nom d'utilisateur</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Entrez votre nom d'utilisateur" required />
+                                </div>
+                                <div class="invalid-feedback">Veuillez entrer votre nom d'utilisateur.</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Entrez votre mot de passe" required />
+                                </div>
+                                <div class="invalid-feedback">Veuillez entrer votre mot de passe.</div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt me-2"></i> Se connecter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="card-footer bg-light text-center py-3">
+                        <div>Vous n'avez pas de compte? <a th:href="@{/register}" class="text-decoration-none">Inscrivez-vous</a>.</div>
+                        <div class="mt-2"><a th:href="@{/}" class="text-decoration-none"><i class="fas fa-home me-1"></i> Retour à l'accueil</a></div>
+                    </div>
+                </div>
+                
+                <!-- Zone d'aide -->
+                <div class="text-center mt-4">
+                    <a href="#" class="text-decoration-none">Mot de passe oublié ?</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- Script de validation du formulaire -->
+    <script>
+        // Validation des formulaires Bootstrap
+        (function() {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+</body>
+</html>

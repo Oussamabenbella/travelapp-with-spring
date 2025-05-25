@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Détails du voyage - TravelAppV2')">
+    <title>Détails du voyage - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <!-- Titre et navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/trips}">Mes Voyages</a></li>
+                        <li class="breadcrumb-item active" aria-current="page" th:text="${trip.title}">Détails du voyage</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Entête du voyage -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="display-5 mb-2" th:text="${trip.title}">Titre du voyage</h1>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge rounded-pill me-2" th:if="${trip.status != null}" 
+                          th:classappend="${trip.status == 'PLANNING' ? 'bg-warning' : (trip.status == 'BOOKED' ? 'bg-info' : (trip.status == 'ONGOING' ? 'bg-primary' : (trip.status == 'COMPLETED' ? 'bg-success' : 'bg-danger')))}"
+                          th:text="${trip.status == 'PLANNING' ? 'En planification' : (trip.status == 'BOOKED' ? 'Réservé' : (trip.status == 'ONGOING' ? 'En cours' : (trip.status == 'COMPLETED' ? 'Terminé' : 'Annulé')))}">
+                        Statut
+                    </span>
+                    
+                    <span th:if="${trip.destination != null}" class="text-muted">
+                        <i class="fas fa-map-marker-alt me-1"></i>
+                        <span th:text="${trip.destination.name}">Paris, France</span>
+                    </span>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-calendar-alt me-2 text-primary"></i>Dates</h5>
+                                <div th:if="${trip.startDate != null && trip.endDate != null}" class="d-flex align-items-center">
+                                    <div class="text-center me-3">
+                                        <div class="bg-light rounded py-2 px-3">
+                                            <div class="small text-muted" th:text="${#temporals.format(trip.startDate, 'MMM')}">Sep</div>
+                                            <div class="fs-3 fw-bold" th:text="${#temporals.format(trip.startDate, 'dd')}">15</div>
+                                            <div class="small text-muted" th:text="${#temporals.format(trip.startDate, 'yyyy')}">2023</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center mx-2">
+                                        <i class="fas fa-arrow-right text-muted"></i>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="bg-light rounded py-2 px-3">
+                                            <div class="small text-muted" th:text="${#temporals.format(trip.endDate, 'MMM')}">Sep</div>
+                                            <div class="fs-3 fw-bold" th:text="${#temporals.format(trip.endDate, 'dd')}">22</div>
+                                            <div class="small text-muted" th:text="${#temporals.format(trip.endDate, 'yyyy')}">2023</div>
+                                        </div>
+                                    </div>
+                                    <div class="ms-3">
+                                        <span class="badge bg-primary" 
+                                              th:text="${trip.startDate.until(trip.endDate).getDays() + 1} + ' jours'">
+                                            7 jours
+                                        </span>
+                                    </div>
+                                </div>
+                                <div th:unless="${trip.startDate != null && trip.endDate != null}" class="text-muted">
+                                    <i class="fas fa-exclamation-circle me-1"></i> Dates non définies
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-body">
+                                <h5 class="card-title"><i class="fas fa-money-bill-wave me-2 text-primary"></i>Budget</h5>
+                                <div th:if="${trip.budget != null}">
+                                    <div class="display-6 mb-0" th:text="${#numbers.formatDecimal(trip.budget, 1, 2) + ' €'}">
+                                        1500.00 €
+                                    </div>
+                                    <div class="text-muted small">Budget total estimé</div>
+                                </div>
+                                <div th:unless="${trip.budget != null}" class="text-muted">
+                                    <i class="fas fa-exclamation-circle me-1"></i> Budget non défini
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="card shadow-sm mb-4" th:if="${trip.notes != null && !trip.notes.isEmpty()}">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-sticky-note me-2 text-primary"></i>Notes</h5>
+                        <p class="card-text" th:text="${trip.notes}">Notes sur le voyage...</p>
+                    </div>
+                </div>
+                
+                <!-- Attractions incluses -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-camera me-2 text-primary"></i>
+                            Attractions incluses
+                            <span class="badge bg-secondary rounded-pill ms-2" th:text="${#lists.size(trip.attractions)}">3</span>
+                        </h5>
+                        <div>
+                            <a th:href="@{'/trips/' + ${trip.id} + '/add-attraction'}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i>Ajouter
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Si des attractions sont incluses -->
+                        <div th:if="${!#lists.isEmpty(trip.attractions)}" class="row row-cols-1 row-cols-md-2 g-4">
+                            <div class="col" th:each="attraction : ${trip.attractions}">
+                                <div class="card h-100">
+                                    <div class="row g-0">
+                                        <div class="col-4">
+                                            <img th:if="${attraction.imageUrl != null}" th:src="${attraction.imageUrl}" 
+                                                 class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="Image attraction">
+                                            <div th:unless="${attraction.imageUrl != null}" 
+                                                 class="bg-light d-flex align-items-center justify-content-center h-100 rounded-start">
+                                                <i class="fas fa-camera fa-2x text-muted"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="card-body">
+                                                <h6 class="card-title" th:text="${attraction.name}">Nom de l'attraction</h6>
+                                                <p class="card-text small mb-1" th:if="${attraction.location != null}">
+                                                    <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                                                    <span th:text="${attraction.location}">Localisation</span>
+                                                </p>
+                                                <p class="card-text small mb-2" th:if="${attraction.price != null}">
+                                                    <i class="fas fa-tag me-1 text-primary"></i>
+                                                    <span th:text="${#numbers.formatDecimal(attraction.price, 1, 2) + ' €'}">15.00 €</span>
+                                                </p>
+                                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                                    <a th:href="@{'/attractions/' + ${attraction.id}}" class="btn btn-sm btn-outline-info">
+                                                        <i class="fas fa-info-circle me-1"></i>Détails
+                                                    </a>
+                                                    <a th:href="@{'/trips/' + ${trip.id} + '/remove-attraction/' + ${attraction.id}}" 
+                                                       class="btn btn-sm btn-outline-danger"
+                                                       onclick="return confirm('Voulez-vous vraiment retirer cette attraction de votre voyage ?');">
+                                                        <i class="fas fa-times me-1"></i>Retirer
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Si aucune attraction n'est incluse -->
+                        <div th:if="${#lists.isEmpty(trip.attractions)}" class="text-center py-4">
+                            <div class="mb-3">
+                                <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+                                <p>Aucune attraction n'a été ajoutée à ce voyage.</p>
+                            </div>
+                            <a th:href="@{'/trips/' + ${trip.id} + '/add-attraction'}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-2"></i>Ajouter des attractions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panneau latéral -->
+            <div class="col-md-4">
+                <!-- Image de la destination si disponible -->
+                <div class="card shadow-sm mb-4" th:if="${trip.destination != null && trip.destination.imageUrl != null}">
+                    <img th:src="${trip.destination.imageUrl}" class="card-img-top" alt="Image de la destination">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${trip.destination.name}">Nom de la destination</h5>
+                        <p class="card-text" th:if="${trip.destination.description != null}" th:text="${#strings.abbreviate(trip.destination.description, 200)}">
+                            Description de la destination...
+                        </p>
+                        <a th:href="@{'/destinations/' + ${trip.destination.id}}" class="btn btn-outline-primary">
+                            <i class="fas fa-info-circle me-1"></i>Voir la destination
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs me-2 text-primary"></i>Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a th:href="@{'/trips/edit/' + ${trip.id}}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Modifier ce voyage
+                            </a>
+                            <button class="btn btn-outline-primary">
+                                <i class="fas fa-print me-2"></i>Imprimer l'itinéraire
+                            </button>
+                            <button class="btn btn-outline-info">
+                                <i class="fas fa-share-alt me-2"></i>Partager ce voyage
+                            </button>
+                            <button class="btn btn-outline-warning">
+                                <i class="fas fa-copy me-2"></i>Dupliquer ce voyage
+                            </button>
+                            <a th:href="@{'/trips/delete/' + ${trip.id}}" class="btn btn-outline-danger" 
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce voyage ?');">
+                                <i class="fas fa-trash-alt me-2"></i>Supprimer ce voyage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Barre de progression -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-tasks me-2 text-primary"></i>Progression de la planification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Calcul d'un score de progression basé sur les champs remplis -->
+                        <div class="mb-3" th:with="progress=${(trip.title != null ? 10 : 0) + 
+                                                              (trip.destination != null ? 20 : 0) + 
+                                                              (trip.startDate != null && trip.endDate != null ? 20 : 0) +
+                                                              (trip.budget != null ? 10 : 0) +
+                                                              (trip.notes != null && !trip.notes.isEmpty() ? 10 : 0) +
+                                                              (!#lists.isEmpty(trip.attractions) ? 30 : 0)}">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" th:style="'width: ' + ${progress} + '%'" 
+                                     th:aria-valuenow="${progress}" aria-valuemin="0" aria-valuemax="100" 
+                                     th:text="${progress} + '%'">
+                                    70%
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Liste à cocher -->
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${trip.title != null ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Informations de base
+                                </span>
+                                <span class="badge bg-light text-dark">10%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${trip.destination != null ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Sélection de la destination
+                                </span>
+                                <span class="badge bg-light text-dark">20%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${trip.startDate != null && trip.endDate != null ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Définition des dates
+                                </span>
+                                <span class="badge bg-light text-dark">20%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${trip.budget != null ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Estimation du budget
+                                </span>
+                                <span class="badge bg-light text-dark">10%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${!#lists.isEmpty(trip.attractions) ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Sélection des attractions
+                                </span>
+                                <span class="badge bg-light text-dark">30%</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-check-circle me-2" th:class="${trip.notes != null && !trip.notes.isEmpty() ? 'fas fa-check-circle text-success' : 'far fa-circle text-muted'} + ' me-2'"></i>
+                                    Ajout de notes
+                                </span>
+                                <span class="badge bg-light text-dark">10%</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${title}">Détails de la réservation - TravelAppV2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <header>
+        <div>
+            <a th:href="@{/}">Accueil</a> |
+            <a th:href="@{/reservations/my}">Mes réservations</a> |
+            <span sec:authentication="name">Utilisateur</span> |
+            <a th:href="@{/logout}">Déconnexion</a>
+        </div>
+    </header>
+
+    <h1>Détails de la réservation</h1>
+    
+    <div class="card">
+        <div class="card-header" th:text="'Réservation #' + ${reservation.id}">Réservation #1</div>
+        <div class="card-body">
+            <h2 th:text="${reservation.destination.name}">Nom de la destination</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h3>Informations de réservation</h3>
+                    <p><strong>Statut :</strong> <span th:text="${reservation.confirmed} ? 'Confirmée' : 'En attente'">En attente</span></p>
+                    <p><strong>Date de début :</strong> <span th:text="${#temporals.format(reservation.startDate, 'dd/MM/yyyy')}">01/01/2025</span></p>
+                    <p><strong>Date de fin :</strong> <span th:text="${#temporals.format(reservation.endDate, 'dd/MM/yyyy')}">08/01/2025</span></p>
+                    <p><strong>Durée :</strong> <span th:text="${reservation.endDate.dayOfYear - reservation.startDate.dayOfYear + 1}">8</span> jours</p>
+                    <p><strong>Nombre de participants :</strong> <span th:text="${reservation.numberOfPeople}">2</span></p>
+                    <p th:if="${reservation.notes}"><strong>Remarques :</strong> <span th:text="${reservation.notes}">Notes</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h3>Destination</h3>
+                    <p><strong>Pays :</strong> <span th:text="${reservation.destination.country}">France</span></p>
+                    <p><strong>Ville :</strong> <span th:text="${reservation.destination.city}">Paris</span></p>
+                    <p th:text="${reservation.destination.description}">Description</p>
+                </div>
+            </div>
+            
+            <div sec:authorize="hasRole('ADMIN')" class="mt-4">
+                <h3>Informations sur l'utilisateur</h3>
+                <p><strong>Nom d'utilisateur :</strong> <span th:text="${reservation.user.username}">user</span></p>
+                <p><strong>Email :</strong> <span th:text="${reservation.user.email}">user@example.com</span></p>
+            </div>
+            
+            <div class="mt-4">
+                <a th:if="${!reservation.confirmed}" th:href="@{/reservations/edit/{id}(id=${reservation.id})}" class="btn btn-warning">Modifier</a>
+                
+                <form th:if="${!reservation.confirmed and #authorization.expression('hasRole(''ADMIN'')')}" 
+                      th:action="@{/reservations/manage/confirm/{id}(id=${reservation.id})}" 
+                      method="post" style="display: inline-block;">
+                    <button type="submit" class="btn btn-success">Confirmer</button>
+                </form>
+                
+                <form th:action="@{/reservations/cancel/{id}(id=${reservation.id})}" 
+                      method="post" style="display: inline-block;">
+                    <button type="submit" class="btn btn-danger" 
+                            onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation?');">
+                        Annuler
+                    </button>
+                </form>
+                
+                <a th:href="@{${#authorization.expression('hasRole(''ADMIN'')')} ? '/reservations/all' : '/reservations/my'}" class="btn btn-secondary">Retour</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head th:replace="fragments/layout :: head(title='Assistant IA | TravelAppV2')">
+    <title>Assistant IA | TravelAppV2</title>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container my-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="fas fa-robot me-2"></i> Assistant de Voyage</h3>
+                        <p class="mb-0">Posez vos questions sur les voyages et obtenez des réponses personnalisées</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="chatContainer" style="height: 60vh; overflow-y: auto; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 20px; margin-bottom: 20px;">
+                            <!-- Message de bienvenue initial -->
+                            <div class="d-flex mb-3">
+                                <div style="background-color: #e9ecef; color: #212529; border-radius: 18px; border-bottom-left-radius: 5px; padding: 10px 15px; max-width: 80%;">
+                                    <div>Bonjour ! Je suis votre assistant de voyage virtuel. Comment puis-je vous aider aujourd'hui ?</div>
+                                    <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right;">Maintenant</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="chatForm" class="mb-3">
+                            <div class="input-group">
+                                <input type="text" id="userInput" class="form-control" placeholder="Posez votre question sur les voyages..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Envoyer
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div>
+                            <p><strong>Exemples de questions :</strong></p>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <button class="btn btn-sm btn-outline-primary example-btn">Que faire à Paris ?</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Quel budget prévoir pour l'Italie ?</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Quand partir au Japon ?</button>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-outline-primary example-btn">Comment planifier un voyage ?</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Voyager en famille</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Conseils de sécurité</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- Script du chatbot -->
+    <script th:inline="javascript">
+        // Éléments du DOM
+        const chatContainer = document.getElementById('chatContainer');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const exampleButtons = document.querySelectorAll('.example-btn');
+
+        // Base de connaissances pour les réponses du chatbot
+        const knowledgeBase = {
+            // Destinations populaires
+            paris: {
+                keywords: ["paris", "france", "tour eiffel", "louvre"],
+                response: "Paris est une destination magnifique ! Voici mes recommandations :\n\n" +
+                    "🏛️ **À voir absolument** :\n" +
+                    "- La Tour Eiffel (réservez vos billets en ligne pour éviter les files)\n" +
+                    "- Le musée du Louvre (prévoyez au moins une demi-journée)\n" +
+                    "- Notre-Dame (vue de l'extérieur pendant sa reconstruction)\n" +
+                    "- Le Sacré-Cœur et Montmartre\n" +
+                    "- Les Champs-Élysées et l'Arc de Triomphe\n\n" +
+                    "🍽️ **Gastronomie** : Ne manquez pas les croissants, macarons, fromages, et un repas dans un bistrot traditionnel.\n\n" +
+                    "⏰ **Quand y aller** : Avril-Juin ou Septembre-Octobre pour moins de touristes et un temps agréable.\n\n" +
+                    "💡 **Conseil** : Achetez la Paris Museum Pass si vous comptez visiter plusieurs sites touristiques."
+            },
+            rome: {
+                keywords: ["rome", "italie", "vatican", "colisée", "colisee", "pasta", "pizza"],
+                response: "L'Italie est une destination riche en histoire, culture et gastronomie ! Pour Rome, voici mes conseils :\n\n" +
+                    "🏛️ **Sites incontournables** :\n" +
+                    "- Le Colisée et le Forum Romain (achetez un billet combiné)\n" +
+                    "- Le Vatican avec la basilique Saint-Pierre et les musées du Vatican\n" +
+                    "- La fontaine de Trevi (visitez tôt le matin pour éviter la foule)\n" +
+                    "- Le Panthéon\n" +
+                    "- La place Navone\n\n" +
+                    "🍕 **Gastronomie** : Goûtez aux pâtes carbonara authentiques, la pizza romana, les gelati et un vrai espresso italien.\n\n" +
+                    "⏰ **Quand y aller** : Avril-Mai ou Septembre-Octobre pour éviter la chaleur estivale intense.\n\n" +
+                    "💡 **Conseil** : Portez des chaussures confortables, Rome se découvre à pied !"
+            },
+            japon: {
+                keywords: ["japon", "tokyo", "kyoto", "sushi", "cerisiers", "sakura"],
+                response: "Le Japon offre un mélange fascinant entre tradition et modernité ! Voici mes recommandations :\n\n" +
+                    "🗼 **À Tokyo** :\n" +
+                    "- Le quartier électronique d'Akihabara\n" +
+                    "- Le sanctuaire Meiji et ses jardins\n" +
+                    "- La Tokyo Skytree pour une vue panoramique\n" +
+                    "- Les quartiers de Shibuya et Shinjuku\n\n" +
+                    "⛩️ **À Kyoto** :\n" +
+                    "- Le temple Kinkaku-ji (Pavillon d'or)\n" +
+                    "- La forêt de bambous d'Arashiyama\n" +
+                    "- Le sanctuaire Fushimi Inari et ses milliers de torii\n" +
+                    "- Le quartier de Gion pour apercevoir des geishas\n\n" +
+                    "🍱 **Gastronomie** : Sushis, ramens, tempuras, okonomiyaki, takoyaki... chaque région a ses spécialités !\n\n" +
+                    "⏰ **Quand y aller** :\n" +
+                    "- Mars-Avril pour les cerisiers en fleur (réservez longtemps à l'avance)\n" +
+                    "- Octobre-Novembre pour les couleurs d'automne\n\n" +
+                    "💡 **Conseil** : Achetez un Japan Rail Pass avant votre arrivée si vous comptez voyager entre plusieurs villes."
+            },
+            newyork: {
+                keywords: ["new york", "nyc", "manhattan", "états-unis", "etats-unis", "usa"],
+                response: "New York est une ville vibrante et cosmopolite ! Voici mes recommandations :\n\n" +
+                    "🏙️ **À voir absolument** :\n" +
+                    "- L'Empire State Building ou le Top of the Rock pour une vue panoramique\n" +
+                    "- Central Park (prévoyez au moins une demi-journée pour l'explorer)\n" +
+                    "- Times Square, surtout impressionnant de nuit\n" +
+                    "- Le musée MoMA pour l'art moderne\n" +
+                    "- La High Line, un parc surélevé sur une ancienne voie ferrée\n" +
+                    "- Le mémorial du 11 septembre\n\n" +
+                    "🍔 **Gastronomie** : Essayez un bagel new-yorkais, une pizza à la new-yorkaise, un hot dog de rue et visitez les food courts comme Chelsea Market.\n\n" +
+                    "⏰ **Quand y aller** : Avril-Juin ou Septembre-Novembre pour un climat agréable.\n\n" +
+                    "💡 **Conseil** : Achetez un New York CityPASS si vous prévoyez de visiter plusieurs attractions touristiques."
+            },
+
+            // Catégories de voyage
+            budget: {
+                keywords: ["budget", "coût", "cout", "prix", "cher", "économique", "economique", "combien"],
+                response: "Le budget voyage varie considérablement selon plusieurs facteurs :\n\n" +
+                    "💰 **Par région du monde (budget quotidien moyen par personne)** :\n" +
+                    "- **Asie du Sud-Est** : 30-70€ (petit budget), 70-120€ (confort)\n" +
+                    "- **Europe de l'Est** : 50-80€ (petit budget), 80-150€ (confort)\n" +
+                    "- **Europe de l'Ouest** : 80-120€ (petit budget), 120-250€ (confort)\n" +
+                    "- **Amérique du Nord** : 100-150€ (petit budget), 150-300€ (confort)\n" +
+                    "- **Japon/Australie** : 100-150€ (petit budget), 150-300€ (confort)\n\n" +
+                    "📊 **Répartition typique** :\n" +
+                    "- Hébergement : 30-40% du budget\n" +
+                    "- Nourriture : 20-25%\n" +
+                    "- Transport local : 15-20%\n" +
+                    "- Activités et visites : 10-15%\n" +
+                    "- Divers (souvenirs, achats) : 5-10%\n\n" +
+                    "💡 **Conseils pour économiser** :\n" +
+                    "- Voyagez hors saison\n" +
+                    "- Réservez vols et hébergements à l'avance\n" +
+                    "- Utilisez les transports en commun\n" +
+                    "- Cuisinez quelques repas vous-même\n" +
+                    "- Cherchez les attractions gratuites ou à prix réduit"
+            },
+            planification: {
+                keywords: ["planifier", "organiser", "préparation", "preparation", "planification", "plan", "itinéraire", "itineraire"],
+                response: "Pour bien planifier votre voyage, voici une méthode en plusieurs étapes :\n\n" +
+                    "🌍 **3-6 mois avant le départ** :\n" +
+                    "1. Recherche et inspiration : Définissez le type d'expérience recherchée\n" +
+                    "2. Budget et durée : Établissez votre budget total et la durée idéale\n" +
+                    "3. Documentation : Vérifiez passeport, visa, vaccins nécessaires\n" +
+                    "4. Transport : Réservez vos billets d'avion (2-3 mois à l'avance pour les meilleurs prix)\n\n" +
+                    "🏨 **1-3 mois avant** :\n" +
+                    "5. Hébergement : Réservez selon votre style de voyage et budget\n" +
+                    "6. Itinéraire : Planifiez un itinéraire réaliste avec temps de repos\n" +
+                    "7. Assurance : Souscrivez à une assurance voyage adaptée\n\n" +
+                    "🧳 **Dernières semaines** :\n" +
+                    "8. Téléchargez applications utiles (maps hors-ligne, traducteur)\n" +
+                    "9. Faites une liste de bagages\n" +
+                    "10. Informez votre banque de vos déplacements\n" +
+                    "11. Faites des copies de vos documents importants\n\n" +
+                    "💡 **Conseil** : Gardez une journée flexible tous les 3-4 jours dans votre itinéraire !"
+            },
+            meteo: {
+                keywords: ["météo", "meteo", "climat", "saison", "quand visiter", "période", "periode", "quand partir"],
+                response: "La météo est un facteur essentiel pour réussir votre voyage. Voici un guide par région :\n\n" +
+                    "🌍 **Europe** :\n" +
+                    "- **Méditerranée** : Mai-Juin et Septembre-Octobre sont idéaux (chaud mais pas caniculaire, moins de touristes)\n" +
+                    "- **Europe du Nord** : Juin-Août offrent les meilleures conditions (températures douces, longues journées)\n" +
+                    "- **Europe Centrale** : Mai-Septembre pour un temps agréable (avec juillet-août parfois chaud et bondé)\n\n" +
+                    "🌏 **Asie** :\n" +
+                    "- **Asie du Sud-Est** : Novembre-Février (saison sèche), évitez Mai-Octobre (mousson)\n" +
+                    "- **Japon** : Mars-Avril (cerisiers en fleur) et Octobre-Novembre (couleurs d'automne)\n" +
+                    "- **Inde** : Octobre-Mars (évitez la mousson de Juin-Septembre et la chaleur d'Avril-Mai)\n\n" +
+                    "🌎 **Amérique** :\n" +
+                    "- **USA/Canada** : Mai-Juin et Septembre-Octobre pour la plupart des régions\n" +
+                    "- **Mexique/Caraïbes** : Décembre-Avril (saison sèche), évitez Septembre-Octobre (ouragans)\n" +
+                    "- **Amérique du Sud** : Variable selon la région (le Brésil est idéal d'Avril à Octobre)\n\n" +
+                    "💡 **Conseil** : Vérifiez la météo locale juste avant votre départ pour ajuster vos bagages."
+            },
+            securite: {
+                keywords: ["sécurité", "securite", "danger", "risque", "vol", "arnaque", "pickpocket"],
+                response: "La sécurité est primordiale en voyage. Voici des conseils essentiels :\n\n" +
+                    "📋 **Avant de partir** :\n" +
+                    "- Consultez les conseils aux voyageurs officiels de votre gouvernement\n" +
+                    "- Souscrivez une assurance voyage complète (médicale, rapatriement, annulation)\n" +
+                    "- Enregistrez-vous auprès de votre ambassade si vous voyagez dans une zone à risque\n" +
+                    "- Faites des copies numériques de vos documents importants (passeport, assurance, billets)\n\n" +
+                    "🔒 **Sécurité personnelle** :\n" +
+                    "- Restez vigilant dans les zones touristiques et transports en commun (pickpockets)\n" +
+                    "- Utilisez un portefeuille discret sous vos vêtements pour l'argent et documents importants\n" +
+                    "- Évitez d'afficher des objets de valeur (bijoux, appareils électroniques coûteux)\n" +
+                    "- Méfiez-vous des arnaques courantes ciblant les touristes\n\n" +
+                    "🩺 **Santé** :\n" +
+                    "- Vérifiez les vaccins requis ou recommandés\n" +
+                    "- Emportez une trousse de premiers soins et vos médicaments habituels\n" +
+                    "- Dans certaines régions, buvez uniquement de l'eau en bouteille scellée\n" +
+                    "- Notez les numéros d'urgence locaux et l'adresse de l'hôpital le plus proche\n\n" +
+                    "💡 **Conseil** : Écoutez votre intuition. Si une situation vous semble suspecte, éloignez-vous."
+            },
+            famille: {
+                keywords: ["famille", "enfant", "bébé", "bebe", "ado", "adolescent"],
+                response: "Pour un voyage réussi en famille, voici mes recommandations :\n\n" +
+                    "🏖️ **Destinations idéales pour les familles** :\n" +
+                    "- **Espagne** : Costa Dorada avec PortAventura World, îles Canaries\n" +
+                    "- **France** : Côte d'Azur, Disneyland Paris, Puy du Fou\n" +
+                    "- **Royaume-Uni** : Londres avec ses musées gratuits et nombreuses activités pour enfants\n" +
+                    "- **Italie** : Lacs du Nord, côtes avec plages à pente douce\n" +
+                    "- **Thaïlande** : Plages sécuritaires, population accueillante envers les enfants\n\n" +
+                    "✅ **Conseils pratiques** :\n" +
+                    "- Prévoyez des trajets plus courts et des pauses régulières\n" +
+                    "- Réservez des hébergements adaptés aux familles avec cuisinette\n" +
+                    "- Emportez des divertissements pour les temps d'attente et les trajets\n" +
+                    "- Alternez les activités pour plaire à tous les âges\n" +
+                    "- Gardez une routine minimale pour les repas et le sommeil\n\n" +
+                    "🧳 **À ne pas oublier** :\n" +
+                    "- Trousse de premiers soins adaptée aux enfants\n" +
+                    "- Documents nécessaires pour voyager avec des mineurs\n" +
+                    "- Encas et bouteilles d'eau pour les imprévus\n\n" +
+                    "💡 **Conseil** : Impliquez les enfants dans la planification du voyage pour qu'ils se sentent investis !"
+            }
+        };
+
+        // Formatage du texte pour l'affichage
+        function formatText(text) {
+            // Gras
+            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Italique
+            text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Sauts de ligne
+            text = text.replace(/\n/g, '<br>');
+            // Emojis (déjà en Unicode, pas besoin de remplacement)
+            return text;
+        }
+
+        // Ajout d'un message dans la conversation
+        function addMessage(content, isUser = false) {
+            // Créer l'élément de message
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'd-flex mb-3' + (isUser ? ' justify-content-end' : '');
+            
+            // Style différent selon l'expéditeur
+            const messageStyle = isUser 
+                ? 'background-color: #007bff; color: white; border-radius: 18px; border-bottom-right-radius: 5px; padding: 10px 15px; max-width: 80%;'
+                : 'background-color: #e9ecef; color: #212529; border-radius: 18px; border-bottom-left-radius: 5px; padding: 10px 15px; max-width: 80%;';
+            
+            // Contenu du message
+            const content_formatted = isUser ? content : formatText(content);
+            
+            // Construire le HTML du message
+            messageDiv.innerHTML = `
+                <div style="${messageStyle}">
+                    <div>${content_formatted}</div>
+                    <div style="font-size: 0.7rem; opacity: 0.7; margin-top: 5px; text-align: right;">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            // Ajouter le message au conteneur
+            chatContainer.appendChild(messageDiv);
+            
+            // Faire défiler vers le bas pour voir le nouveau message
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Création d'un indicateur de frappe
+        function createTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'd-flex mb-3';
+            typingDiv.id = 'typingIndicator';
+            
+            typingDiv.innerHTML = `
+                <div style="background-color: #e9ecef; border-radius: 18px; padding: 10px 15px; max-width: 80%;">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return typingDiv;
+        }
+
+        // Génération d'une réponse basée sur le message utilisateur
+        function generateResponse(message) {
+            // Conversion en minuscules pour faciliter la comparaison
+            const lowerMessage = message.toLowerCase();
+            
+            // Parcours de la base de connaissances pour trouver une correspondance
+            for (const [topic, data] of Object.entries(knowledgeBase)) {
+                for (const keyword of data.keywords) {
+                    if (lowerMessage.includes(keyword)) {
+                        return data.response;
+                    }
+                }
+            }
+            
+            // Message par défaut si aucune correspondance n'est trouvée
+            return "Merci pour votre question ! Pour vous aider au mieux, pourriez-vous me poser une question sur :\n\n" +
+                "- Une destination spécifique (Paris, Rome, Japon, New York...)\n" +
+                "- Le budget de voyage\n" +
+                "- La planification d'un voyage\n" +
+                "- La météo et les meilleures périodes\n" +
+                "- Les conseils de sécurité\n" +
+                "- Les voyages en famille";
+        }
+
+        // Traitement de l'envoi du message
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Affichage du message utilisateur
+            addMessage(message, true);
+            
+            // Effacement du champ de saisie
+            userInput.value = '';
+            
+            // Affichage de l'indicateur de frappe
+            const typingIndicator = createTypingIndicator();
+            
+            // Simulation d'un délai de réponse pour un effet naturel
+            setTimeout(() => {
+                // Suppression de l'indicateur de frappe
+                typingIndicator.remove();
+                
+                // Génération et affichage de la réponse
+                const response = generateResponse(message);
+                addMessage(response);
+            }, 1500);
+        });
+
+        // Gestion des exemples de questions
+        exampleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const question = this.textContent;
+                userInput.value = question;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+
+        // Style pour les animations d'indicateur de frappe
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            .typing-indicator {
+                display: inline-block;
+                width: 50px;
+                height: 20px;
+            }
+            .typing-indicator span {
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                background-color: #999;
+                border-radius: 50%;
+                margin-right: 3px;
+                animation: typing 1.4s infinite ease-in-out both;
+            }
+            .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+            .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+            .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+            @keyframes typing {
+                0% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+                100% { transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>

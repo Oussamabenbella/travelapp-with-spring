@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Mes Voyages - TravelAppV2')">
+    <title>Mes Voyages - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="display-5"><i class="fas fa-route me-3 text-primary"></i>Mes Voyages</h1>
+                <p class="lead">Planifiez vos itinéraires et organisez vos voyages de A à Z</p>
+            </div>
+            <div class="col-md-4 text-end d-flex align-items-center justify-content-end">
+                <a th:href="@{/trips/create}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Planifier un nouveau voyage
+                </a>
+            </div>
+        </div>
+        
+        <!-- Introduction à la fonctionnalité -->
+        <div class="row mb-4" th:if="${#lists.isEmpty(trips)}">
+            <div class="col-12">
+                <div class="card bg-light shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-info-circle me-2 text-primary"></i>Qu'est-ce que la planification de voyage ?</h5>
+                        <p class="card-text">La fonctionnalité <strong>Voyages</strong> vous permet de :</p>
+                        <ul>
+                            <li><strong>Planifier</strong> vos itinéraires complets</li>
+                            <li><strong>Organiser</strong> votre calendrier de voyage</li>
+                            <li><strong>Sélectionner</strong> les attractions que vous souhaitez visiter</li>
+                            <li><strong>Gérer</strong> votre budget et ajouter des notes</li>
+                            <li><strong>Suivre</strong> l'état d'avancement de vos préparatifs</li>
+                        </ul>
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>Contrairement aux réservations qui concernent uniquement l'hébergement, les voyages vous permettent de planifier l'ensemble de vos activités.
+                        </div>
+                        <div class="text-center mt-3">
+                            <a th:href="@{/trips/create}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plane-departure me-2"></i>Commencer à planifier
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filtres -->
+        <div class="row mb-4" th:if="${!#lists.isEmpty(trips)}">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-filter me-2"></i>Filtrer mes voyages</h5>
+                        <form class="row g-3">
+                            <div class="col-md-4">
+                                <select class="form-select" aria-label="Statut">
+                                    <option selected>Tous les statuts</option>
+                                    <option value="PLANNING">En planification</option>
+                                    <option value="BOOKED">Réservé</option>
+                                    <option value="ONGOING">En cours</option>
+                                    <option value="COMPLETED">Terminé</option>
+                                    <option value="CANCELLED">Annulé</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" aria-label="Période">
+                                    <option selected>Toutes les périodes</option>
+                                    <option value="UPCOMING">À venir</option>
+                                    <option value="PAST">Passés</option>
+                                    <option value="THIS_MONTH">Ce mois-ci</option>
+                                    <option value="NEXT_MONTH">Mois prochain</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-2"></i>Filtrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Liste des voyages -->
+        <div class="row" th:if="${!#lists.isEmpty(trips)}">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Voyage</th>
+                                        <th>Destination</th>
+                                        <th>Dates</th>
+                                        <th>Budget</th>
+                                        <th>Statut</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="trip : ${trips}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div th:if="${trip.destination != null && trip.destination.imageUrl != null}" class="me-3">
+                                                    <img th:src="${trip.destination.imageUrl}" class="rounded-circle" width="40" height="40" style="object-fit: cover;" alt="">
+                                                </div>
+                                                <div th:unless="${trip.destination != null && trip.destination.imageUrl != null}" class="me-3">
+                                                    <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style="width: 40px; height: 40px;">
+                                                        <i class="fas fa-suitcase"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <strong th:text="${trip.title}">Titre du voyage</strong>
+                                                    <div class="text-muted small" th:if="${trip.notes != null && !trip.notes.isEmpty()}">
+                                                        <span th:text="${#strings.abbreviate(trip.notes, 30)}">Notes abrégées</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span th:if="${trip.destination != null}" th:text="${trip.destination.name}">Destination</span>
+                                            <span th:unless="${trip.destination != null}" class="text-muted">Non définie</span>
+                                        </td>
+                                        <td>
+                                            <div th:if="${trip.startDate != null && trip.endDate != null}">
+                                                <span th:text="${#temporals.format(trip.startDate, 'dd/MM/yyyy')}">01/01/2025</span>
+                                                <i class="fas fa-arrow-right mx-1 text-muted"></i>
+                                                <span th:text="${#temporals.format(trip.endDate, 'dd/MM/yyyy')}">10/01/2025</span>
+                                                <div class="text-muted small">
+                                                    <span th:text="${trip.startDate.until(trip.endDate).getDays() + 1}">10</span> jours
+                                                </div>
+                                            </div>
+                                            <span th:unless="${trip.startDate != null && trip.endDate != null}" class="text-muted">Dates non définies</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${trip.budget != null}" th:text="${#numbers.formatDecimal(trip.budget, 1, 2) + ' €'}">1000.00 €</span>
+                                            <span th:unless="${trip.budget != null}" class="text-muted">Non défini</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${trip.status != null}" class="badge rounded-pill" th:classappend="${trip.status == 'PLANNING' ? 'bg-warning' : (trip.status == 'BOOKED' ? 'bg-info' : (trip.status == 'ONGOING' ? 'bg-primary' : (trip.status == 'COMPLETED' ? 'bg-success' : 'bg-danger')))}"
+                                                  th:text="${trip.status == 'PLANNING' ? 'En planification' : (trip.status == 'BOOKED' ? 'Réservé' : (trip.status == 'ONGOING' ? 'En cours' : (trip.status == 'COMPLETED' ? 'Terminé' : 'Annulé')))}">Statut</span>
+                                            <span th:unless="${trip.status != null}" class="badge bg-secondary">Non défini</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="btn-group">
+                                                <a th:href="@{'/trips/edit/' + ${trip.id}}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-info-circle"></i>
+                                                </button>
+                                                <a th:href="@{'/trips/delete/' + ${trip.id}}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce voyage ?');">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Message si aucun voyage -->
+        <div class="row mt-4" th:if="${#lists.isEmpty(trips) && trips != null}">
+            <div class="col-12 text-center">
+                <div class="alert alert-light border">
+                    <i class="fas fa-plane-slash fa-3x mb-3 text-muted"></i>
+                    <p>Vous n'avez pas encore planifié de voyage.</p>
+                    <a th:href="@{/trips/create}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle me-2"></i>Planifier mon premier voyage
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Suggestions -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3><i class="fas fa-lightbulb me-2 text-warning"></i>Suggestions</h3>
+                <hr class="mb-4">
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-globe-americas me-2 text-primary"></i>Explorer des destinations</h5>
+                        <p class="card-text">Découvrez nos destinations populaires pour planifier votre prochain voyage.</p>
+                        <a th:href="@{/destinations}" class="btn btn-outline-primary">
+                            <i class="fas fa-search me-1"></i> Voir les destinations
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-camera me-2 text-primary"></i>Attractions populaires</h5>
+                        <p class="card-text">Inspirez-vous des attractions les plus populaires pour enrichir vos voyages.</p>
+                        <a th:href="@{/attractions}" class="btn btn-outline-primary">
+                            <i class="fas fa-map-marker-alt me-1"></i> Voir les attractions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+</body>
+</html>

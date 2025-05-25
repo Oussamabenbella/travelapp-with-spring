@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="fragments/layout :: head(title='Inscription - TravelAppV2')">
+    <title>Inscription - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3><i class="fas fa-user-plus me-2"></i> Créer un compte</h3>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        <!-- Messages d'alerte -->
+                        <div th:if="${error}" class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> <span th:text="${error}">Une erreur est survenue</span>
+                        </div>
+                        
+                        <!-- Formulaire d'inscription -->
+                        <form th:action="@{/register}" th:object="${user}" method="post" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nom d'utilisateur</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" th:field="*{username}" 
+                                           placeholder="Choisissez un nom d'utilisateur" required />
+                                </div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Erreur de nom d'utilisateur</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Adresse email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" th:field="*{email}" 
+                                           placeholder="Entrez votre adresse email" required />
+                                </div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">Erreur d'email</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" th:field="*{password}" 
+                                           placeholder="Créez un mot de passe sécurisé" required />
+                                </div>
+                                <div class="text-danger" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Erreur de mot de passe</div>
+                                <div class="form-text">Le mot de passe doit contenir au moins 6 caractères.</div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-user-plus me-2"></i> S'inscrire
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="card-footer bg-light text-center py-3">
+                        <div>Vous avez déjà un compte? <a th:href="@{/login}" class="text-decoration-none">Connectez-vous</a>.</div>
+                        <div class="mt-2"><a th:href="@{/}" class="text-decoration-none"><i class="fas fa-home me-1"></i> Retour à l'accueil</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- Script de validation du formulaire -->
+    <script>
+        // Validation des formulaires Bootstrap
+        (function() {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+    </script>
+</body>
+</html>

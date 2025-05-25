@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${title}">Modifier la réservation - TravelAppV2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <header>
+        <div>
+            <a th:href="@{/}">Accueil</a> |
+            <a th:href="@{/reservations/my}">Mes réservations</a> |
+            <span sec:authentication="name">Utilisateur</span> |
+            <a th:href="@{/logout}">Déconnexion</a>
+        </div>
+    </header>
+
+    <h1>Modifier la réservation</h1>
+    
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}">
+        Une erreur est survenue.
+    </div>
+    
+    <div class="destination-info">
+        <h2 th:text="${destination.name}">Nom de la destination</h2>
+        <p th:text="${destination.description}">Description de la destination</p>
+        <p><strong>Pays:</strong> <span th:text="${destination.country}">Pays</span></p>
+        <p><strong>Ville:</strong> <span th:text="${destination.city}">Ville</span></p>
+    </div>
+    
+    <form th:action="@{/reservations/edit/{id}(id=${reservation.id})}" th:object="${reservation}" method="post">
+        <div class="form-group">
+            <label for="startDate">Date de début</label>
+            <input type="date" id="startDate" th:field="*{startDate}" class="form-control" required />
+            <div th:if="${#fields.hasErrors('startDate')}" class="error" th:errors="*{startDate}">Erreur de date</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="endDate">Date de fin</label>
+            <input type="date" id="endDate" th:field="*{endDate}" class="form-control" required />
+            <div th:if="${#fields.hasErrors('endDate')}" class="error" th:errors="*{endDate}">Erreur de date</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="numberOfPeople">Nombre de participants</label>
+            <input type="number" id="numberOfPeople" th:field="*{numberOfPeople}" min="1" max="20" class="form-control" required />
+            <div th:if="${#fields.hasErrors('numberOfPeople')}" class="error" th:errors="*{numberOfPeople}">Erreur de nombre</div>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Remarques (optionnel)</label>
+            <textarea id="notes" th:field="*{notes}" class="form-control" rows="3"></textarea>
+        </div>
+        
+        <div id="availability-message" style="display: none;" class="alert alert-warning">
+            Vérification de la disponibilité...
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+        <a th:href="@{/reservations/{id}(id=${reservation.id})}" class="btn btn-secondary">Annuler</a>
+    </form>
+    
+    <script th:inline="javascript">
+        // Script pour vérifier la disponibilité des dates modifiées
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const availabilityMessage = document.getElementById('availability-message');
+            const destinationId = /*[[${destination.id}]]*/ '0';
+            const reservationId = /*[[${reservation.id}]]*/ '0';
+            
+            function checkAvailability() {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                
+                if (!startDate || !endDate || startDate > endDate) {
+                    return;
+                }
+                
+                availabilityMessage.style.display = 'block';
+                availabilityMessage.innerText = 'Vérification de la disponibilité...';
+                
+                // Ajouter l'ID de la réservation actuelle pour exclure ses propres dates
+                fetch(`/reservations/check-availability?destinationId=${destinationId}&startDate=${startDate}&endDate=${endDate}&excludeReservationId=${reservationId}`)
+                    .then(response => response.json())
+                    .then(available => {
+                        if (available) {
+                            availabilityMessage.innerText = 'Ces dates sont disponibles !';
+                            availabilityMessage.className = 'alert alert-success';
+                        } else {
+                            availabilityMessage.innerText = 'Destination non disponible pour ces dates. Veuillez choisir d\'autres dates.';
+                            availabilityMessage.className = 'alert alert-danger';
+                        }
+                    })
+                    .catch(error => {
+                        availabilityMessage.innerText = 'Erreur lors de la vérification de disponibilité. Veuillez réessayer.';
+                        availabilityMessage.className = 'alert alert-danger';
+                    });
+            }
+            
+            startDateInput.addEventListener('change', checkAvailability);
+            endDateInput.addEventListener('change', checkAvailability);
+        });
+    </script>
+</body>
+</html>

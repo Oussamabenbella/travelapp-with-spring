@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant de Voyage Llama | Travel With Us</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Importation de la bibliothèque WebLLM -->
+    <script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.0/dist/web-llm.min.js" defer></script>
+    <!-- Bibliothèque de repli si WebLLM échoue -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 20px;
+            padding-bottom: 40px;
+        }
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        .bot-message {
+            background-color: #e9ecef;
+            color: #212529;
+            border-bottom-left-radius: 5px;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 50px;
+            height: 20px;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #999;
+            border-radius: 50%;
+            margin-right: 3px;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+        .model-info {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left"></i> Retour à l'accueil
+                </a>
+                <h1><i class="fas fa-plane-departure text-primary"></i> Assistant de Voyage Llama</h1>
+                <div style="width: 110px;"></div> <!-- Élément vide pour équilibrer -->
+            </div>
+            <p class="lead">Posez vos questions sur les voyages et obtenez des réponses détaillées avec Llama</p>
+        </header>
+
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <!-- Information sur le modèle et progression -->
+                <div class="model-info" id="modelInfo">
+                    <h5><i class="fas fa-robot me-2"></i>Modèle Llama</h5>
+                    <div id="modelStatus">Chargement du modèle...</div>
+                    <div class="progress-container" id="progressContainer" style="display: none;">
+                        <div class="progress">
+                            <div id="modelProgress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small id="progressText" class="text-muted">0%</small>
+                    </div>
+                </div>
+
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="fas fa-robot me-2"></i> Conversation</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="chat-container" id="chatContainer">
+                            <!-- Les messages s'afficheront ici -->
+                            <div class="message bot-message">
+                                <div class="message-content">Bonjour ! Je suis votre assistant de voyage basé sur Llama. Comment puis-je vous aider aujourd'hui ?</div>
+                                <div class="message-time">Maintenant</div>
+                            </div>
+                        </div>
+                        
+                        <form id="chatForm">
+                            <div class="input-group">
+                                <input type="text" id="userInput" class="form-control" placeholder="Posez votre question sur les voyages..." required>
+                                <button type="submit" class="btn btn-primary" id="sendButton">
+                                    <i class="fas fa-paper-plane"></i> Envoyer
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="mt-3">
+                            <p><strong>Exemples de questions :</strong></p>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <button class="btn btn-sm btn-outline-primary example-btn">Meilleure période pour visiter Paris ?</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Conseils de voyage pour le Japon</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Budget voyage en Italie</button>
+                                <button class="btn btn-sm btn-outline-primary example-btn">Conseils de sécurité</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer class="text-center mt-4 text-muted">
+            <p>&copy; 2025 Travel With Us - Assistant de Voyage Llama</p>
+        </footer>
+    </div>
+    <script>
+        // Éléments du DOM
+        const chatContainer = document.getElementById('chatContainer');
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const exampleButtons = document.querySelectorAll('.example-btn');
+        const modelInfo = document.getElementById('modelInfo');
+        const modelStatus = document.getElementById('modelStatus');
+        const progressContainer = document.getElementById('progressContainer');
+        const modelProgress = document.getElementById('modelProgress');
+        const progressText = document.getElementById('progressText');
+        
+        // Configuration de WebLLM
+        let chatBot = null;
+        let usingFallback = false;
+        const modelOptions = {
+            model: 'Llama-2-7b-chat-hf-q4f16_1',
+            temperature: 0.7,
+            max_gen_len: 256
+        };
+        
+        // Vérifie si WebLLM est disponible
+        function checkWebLLMAvailability() {
+            return typeof window.webllm !== 'undefined';
+        }
+        
+        // Initialisation du chatbot
+        async function initChatBot() {
+            try {
+                // Afficher le message de chargement
+                modelStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Vérification du support WebLLM...';
+                progressContainer.style.display = 'block';
+                
+                // Vérifier si WebLLM est disponible
+                if (!checkWebLLMAvailability()) {
+                    throw new Error("La bibliothèque WebLLM n'est pas disponible sur ce navigateur");
+                }
+                
+                // Afficher le message de chargement du modèle
+                modelStatus.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Chargement du modèle Llama-2-7b-chat...';
+                
+                // Initialiser le chatbot
+                chatBot = new webllm.ChatModule({});
+                
+                // Configuration de la progression
+                chatBot.setInitProgressCallback((report) => {
+                    if (report.progress) {
+                        const percent = Math.round(report.progress * 100);
+                        modelProgress.style.width = `${percent}%`;
+                        progressText.textContent = `${percent}%: ${report.text}`;
+                    }
+                });
+                
+                // Chargement du modèle
+                await chatBot.reload(modelOptions.model);
+                
+                // Mettre à jour l'état
+                modelStatus.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-2"></i>Modèle chargé et prêt !</span>';
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+                
+                // Activer le formulaire
+                sendButton.disabled = false;
+                userInput.disabled = false;
+                
+            } catch (error) {
+                console.error('Erreur lors de l\'initialisation du chatbot:', error);
+                usingFallback = true;
+                
+                // Mettre à jour l'interface utilisateur pour le mode de secours
+                modelStatus.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Mode de secours activé</span><br>` + 
+                                      `<small>Utilisation du chatbot sans modèle IA avancé</small>`;
+                progressContainer.style.display = 'none';
+                
+                // Activer le formulaire pour le mode de secours
+                sendButton.disabled = false;
+                userInput.disabled = false;
+            }
+        }
+        
+        // Désactiver le formulaire jusqu'à ce que le modèle soit chargé
+        sendButton.disabled = true;
+        userInput.disabled = true;
+        
+        // Format de message système avec instructions spécifiques pour le voyage
+        const systemPrompt = `Tu es un assistant de voyage professionnel et expert. 
+        Réponds de manière précise, informative et utile aux questions de l'utilisateur sur le voyage. 
+        Propose des conseils personnalisés sur les destinations, la planification, le budget, et la sécurité. 
+        Sois concis dans tes réponses. N'invente pas de faits et précise si tu n'as pas l'information.
+        Concentre-toi sur les aspects pratiques du voyage: quand partir, coût estimé, attractions principales, conseils culturels.
+        Utilise un ton amical et encourageant.`;
+        
+        // Historique des messages pour le contexte
+        let messageHistory = [
+            { role: "system", content: systemPrompt }
+        ];
+        
+        // Ajout d'un message au chat
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = isUser ? content : formatText(content);
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time';
+            timeDiv.textContent = new Date().toLocaleTimeString();
+            
+            messageDiv.appendChild(contentDiv);
+            messageDiv.appendChild(timeDiv);
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return messageDiv;
+        }
+        
+        // Format du texte avec Markdown simple
+        function formatText(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+                .replace(/\n\n/g, '<br><br>') // Double line breaks
+                .replace(/\n/g, '<br>') // Single line breaks
+                .replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2" target="_blank">$1</a>') // Links
+                .replace(/\`([^\`]+)\`/g, '<code>$1</code>') // Code
+                .replace(/\💡/g, '<i class="fas fa-lightbulb text-warning"></i>') // Lightbulb emoji
+                .replace(/\🌍/g, '<i class="fas fa-globe-americas text-info"></i>') // Globe emoji
+                .replace(/\🔍/g, '<i class="fas fa-search"></i>') // Search emoji
+                .replace(/\⚠️/g, '<i class="fas fa-exclamation-triangle text-warning"></i>'); // Warning emoji
+        }
+
+        // Création d'un indicateur de frappe
+        function createTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot-message typing-message';
+            typingDiv.id = 'typingIndicator';
+            
+            const typingContent = document.createElement('div');
+            typingContent.className = 'typing-indicator';
+            
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('span');
+                typingContent.appendChild(dot);
+            }
+            
+            typingDiv.appendChild(typingContent);
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            return typingDiv;
+        }
+        
+        // Fonction de secours en cas d'échec de Llama
+        function fallbackResponse(message) {
+            // Base de connaissances simplifiée pour les réponses de secours
+            const keywords = [
+                { terms: ['paris', 'france', 'eiffel'], response: "Paris est magnifique toute l'année, mais le printemps (avril-juin) et l'automne (sept-oct) offrent le meilleur équilibre entre affluence et météo. Prévoyez au moins 3 jours pour voir les attractions principales." },
+                { terms: ['japon', 'tokyo', 'kyoto'], response: "Le Japon est idéal au printemps (mars-mai) pour les cerisiers en fleur et à l'automne (sept-nov) pour les couleurs. Pensez à prendre un Japan Rail Pass si vous visitez plusieurs villes." },
+                { terms: ['italie', 'rome', 'venise', 'florence'], response: "Pour l'Italie, prévoyez ~100-150€/jour (hébergement, repas, attractions). Évitez l'été pour les grandes villes (chaleur et foules). Le printemps et l'automne sont parfaits." },
+                { terms: ['sécurité', 'securite', 'danger'], response: "Conseils de sécurité en voyage: gardez une copie de vos documents, souscrivez une assurance voyage, renseignez-vous sur les zones à éviter, partagez votre itinéraire avec un proche, et gardez toujours un téléphone chargé." },
+                { terms: ['budget', 'coût', 'cout', 'argent', 'économie'], response: "Pour optimiser votre budget: voyagez hors saison, réservez à l'avance, utilisez les transports en commun, mangez où les locaux mangent, et utilisez des applications comme TooGoodToGo pour réduire vos dépenses alimentaires." },
+                { terms: ['famille', 'enfant', 'enfants', 'bébé', 'bebe'], response: "En voyage en famille: choisissez un hébergement adapté, prévoyez un rythme plus lent, alternez activités pour enfants et adultes, emportez une trousse de premiers soins et une tablette pour les moments d'attente." }
+            ];
+            
+            const lowerMessage = message.toLowerCase();
+            
+            for (const item of keywords) {
+                if (item.terms.some(term => lowerMessage.includes(term))) {
+                    return item.response;
+                }
+            }
+            
+            return "Merci pour votre question ! Pour vous aider au mieux, pourriez-vous me poser une question plus spécifique sur les destinations, le budget, la planification, la météo, les conseils de sécurité ou les voyages en famille ?";
+        }
+
+        // Génération d'une réponse avec Llama ou le mode de secours
+        async function generateLlamaResponse(userMessage) {
+            // Si on utilise le mode de secours, générer une réponse basée sur des règles
+            if (usingFallback || !chatBot) {
+                return fallbackResponse(userMessage);
+            }
+            
+            try {
+                // Ajouter le message utilisateur à l'historique
+                messageHistory.push({ role: "user", content: userMessage });
+                
+                // Générer la réponse
+                const response = await chatBot.generate(messageHistory);
+                
+                // Ajouter la réponse à l'historique
+                messageHistory.push({ role: "assistant", content: response.message });
+                
+                // Limiter la taille de l'historique pour économiser la mémoire
+                if (messageHistory.length > 10) {
+                    // Garder le message système et les 6 derniers messages
+                    messageHistory = [
+                        messageHistory[0],
+                        ...messageHistory.slice(messageHistory.length - 6)
+                    ];
+                }
+                
+                return response.message;
+            } catch (error) {
+                console.error('Erreur lors de la génération de la réponse:', error);
+                // Basculer en mode de secours en cas d'erreur
+                usingFallback = true;
+                modelStatus.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Erreur du modèle. Mode de secours activé</span>`;
+                return fallbackResponse(userMessage);
+            }
+        }
+
+        // Traitement de l'envoi du message
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // Désactiver l'entrée pendant la génération
+            sendButton.disabled = true;
+            userInput.disabled = true;
+            
+            // Affichage du message utilisateur
+            addMessage(message, true);
+            
+            // Effacement du champ de saisie
+            userInput.value = '';
+            
+            // Affichage de l'indicateur de frappe
+            const typingIndicator = createTypingIndicator();
+            
+            try {
+                // Génération de la réponse
+                const response = await generateLlamaResponse(message);
+                
+                // Suppression de l'indicateur de frappe
+                typingIndicator.remove();
+                
+                // Affichage de la réponse
+                addMessage(response);
+            } catch (error) {
+                // En cas d'erreur, utiliser la réponse de secours
+                typingIndicator.remove();
+                addMessage(fallbackResponse(message));
+            }
+            
+            // Réactiver l'entrée
+            sendButton.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+        });
+
+        // Gestion des exemples de questions
+        exampleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const question = this.textContent;
+                userInput.value = question;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+        
+        // Fonction pour activer le mode de secours si WebLLM ne se charge pas
+        function activateFallbackMode() {
+            if (!checkWebLLMAvailability() && !usingFallback) {
+                console.log("WebLLM n'est pas disponible après 3 secondes, activation du mode de secours");
+                usingFallback = true;
+                
+                modelStatus.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i>Mode de secours activé</span><br>' + 
+                                      '<small>Utilisation du chatbot sans modèle IA avancé</small>';
+                
+                // Activer l'interface du chat
+                progressContainer.style.display = 'none';
+                sendButton.disabled = false;
+                userInput.disabled = false;
+            }
+        }
+        
+        // Démarrer l'initialisation du chatbot
+        document.addEventListener('DOMContentLoaded', function() {
+            // Essayer d'initialiser le chatbot
+            initChatBot();
+            
+            // Vérifier après 3 secondes si WebLLM s'est chargé, sinon activer le mode de secours
+            setTimeout(activateFallbackMode, 3000);
+        });
+    </script>
+</body>
+</html>

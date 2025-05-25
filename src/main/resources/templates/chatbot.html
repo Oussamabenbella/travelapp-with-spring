@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant de Voyage | TravelAppV2</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            position: relative;
+        }
+        .user-message {
+            background-color: #0d6efd;
+            color: white;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #e9ecef;
+            color: #212529;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 50px;
+            height: 20px;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #999;
+            border-radius: 50%;
+            margin-right: 3px;
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+        pre {
+            white-space: pre-wrap;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h3><i class="fas fa-robot me-2"></i> Assistant de Voyage</h3>
+                        <p class="mb-0">Posez vos questions sur les voyages et obtenez des réponses personnalisées</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="chat-container" id="chatContainer">
+                            <!-- Messages du chat -->
+                            <div class="message bot-message">
+                                <div>Bonjour ! Je suis votre assistant de voyage virtuel. Comment puis-je vous aider aujourd'hui ?</div>
+                                <div class="message-time">Maintenant</div>
+                            </div>
+                            
+                            <!-- Indicateur de frappe (caché par défaut) -->
+                            <div class="message bot-message typing-message" style="display: none;">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulaire d'envoi de message -->
+                        <form id="chatForm">
+                            <div class="input-group">
+                                <input type="text" id="userInput" class="form-control" placeholder="Posez votre question ici..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Envoyer
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="mt-2 text-muted">
+                            <p><strong>Exemples de questions :</strong></p>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-outline-secondary example-question">Que faire à Paris ?</button>
+                                <button class="btn btn-sm btn-outline-secondary example-question">Quel budget pour un voyage en Italie ?</button>
+                                <button class="btn btn-sm btn-outline-secondary example-question">Comment planifier un voyage ?</button>
+                                <button class="btn btn-sm btn-outline-secondary example-question">Quand visiter le Japon ?</button>
+                                <button class="btn btn-sm btn-outline-secondary example-question">Conseils de sécurité en voyage</button>
+                                <button class="btn btn-sm btn-outline-secondary example-question">Voyager en famille</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            const chatContainer = $('#chatContainer');
+            const chatForm = $('#chatForm');
+            const userInput = $('#userInput');
+            const typingMessage = $('.typing-message');
+            
+            // Format text with line breaks
+            function formatText(text) {
+                if (!text) return '';
+                
+                // Convert line breaks to HTML breaks
+                text = text.replace(/\n/g, '<br>');
+                
+                return text;
+            }
+            
+            // Add message to chat
+            function addMessage(content, isUser = false) {
+                const messageClass = isUser ? 'user-message' : 'bot-message';
+                const formattedContent = isUser ? content : formatText(content);
+                
+                const messageHtml = `
+                    <div class="message ${messageClass}">
+                        <div>${formattedContent}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString()}</div>
+                    </div>
+                `;
+                
+                // Insert before the typing indicator
+                typingMessage.before(messageHtml);
+                
+                // Scroll to bottom
+                chatContainer.scrollTop(chatContainer[0].scrollHeight);
+            }
+            
+            // Show typing indicator
+            function showTyping() {
+                typingMessage.show();
+                chatContainer.scrollTop(chatContainer[0].scrollHeight);
+            }
+            
+            // Hide typing indicator
+            function hideTyping() {
+                typingMessage.hide();
+            }
+            
+            // Send message to server and get response
+            function sendMessage(message) {
+                // Add user message to chat
+                addMessage(message, true);
+                
+                // Clear input field
+                userInput.val('');
+                
+                // Show typing indicator
+                showTyping();
+                
+                // Send request to server
+                $.ajax({
+                    url: '/chatbot/ask',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function(data) {
+                        // Hide typing indicator
+                        hideTyping();
+                        
+                        // Add bot response to chat
+                        setTimeout(function() {
+                            addMessage(data.response);
+                        }, 500); // Small delay for natural feeling
+                    },
+                    error: function() {
+                        // Hide typing indicator
+                        hideTyping();
+                        
+                        // Add error message
+                        addMessage("Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer plus tard.");
+                    }
+                });
+            }
+            
+            // Submit form
+            chatForm.on('submit', function(e) {
+                e.preventDefault();
+                
+                const message = userInput.val().trim();
+                if (message) {
+                    sendMessage(message);
+                }
+            });
+            
+            // Example questions
+            $('.example-question').on('click', function() {
+                const question = $(this).text();
+                userInput.val(question);
+                chatForm.submit();
+            });
+        });
+    </script>
+</body>
+</html>

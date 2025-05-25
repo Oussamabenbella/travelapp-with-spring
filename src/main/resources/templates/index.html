@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Accueil - TravelAppV2')">
+    <title>Accueil - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container">
+        <!-- En-tête de la page -->
+        <div class="row mb-4">
+            <div class="col-12 text-center">
+                <h1 class="display-4">Bienvenue sur TravelAppV2</h1>
+                <p class="lead">Découvrez, planifiez et réservez vos voyages en toute simplicité</p>
+            </div>
+        </div>
+        
+        <!-- Section Destinations (accessible à tous) -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2><i class="fas fa-map-marked-alt"></i> Destinations populaires</h2>
+                <hr class="my-4">
+            </div>
+            
+            <!-- Affichage dynamique des destinations -->
+            <div class="col-md-4 mb-4" th:each="destination : ${popularDestinations}">
+                <div class="card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img th:src="${destination.imageUrl}" class="card-img-top destination-img" alt="${destination.name}" style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 p-2 bg-primary text-white rounded-pill m-2" th:if="${destination.rating != null}">
+                            <i class="fas fa-star"></i> <span th:text="${#numbers.formatDecimal(destination.rating, 1, 1)}">4.5</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${destination.name} + ', ' + ${destination.country}">Destination</h5>
+                        <p class="card-text" th:text="${destination.shortDescription}">Description</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a th:href="@{'/reservations/book/' + ${destination.id}}" class="btn btn-primary">
+                                <i class="fas fa-calendar-alt me-1"></i> Réserver
+                            </a>
+                            <a th:href="@{'/destinations/' + ${destination.id}}" class="btn btn-outline-secondary">
+                                <i class="fas fa-info-circle me-1"></i> Détails
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Message si aucune destination n'est disponible -->
+            <div class="col-12 text-center" th:if="${#lists.isEmpty(popularDestinations)}">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Aucune destination n'est disponible pour le moment.
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fonctionnalités pour les utilisateurs connectés -->
+        <div class="row mb-5" sec:authorize="isAuthenticated()">
+            <div class="col-12">
+                <h2><i class="fas fa-user-check"></i> Mes services</h2>
+                <hr class="my-4">
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-calendar-check fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Mes réservations</h5>
+                        <p class="card-text">Consultez et gérez vos réservations actuelles et passées.</p>
+                        <a th:href="@{/reservations/my}" class="btn btn-outline-primary">Voir</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-suitcase fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Mes voyages</h5>
+                        <p class="card-text">Planifiez et organisez vos itinéraires de voyage.</p>
+                        <a th:href="@{/trips}" class="btn btn-outline-primary">Gérer</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-camera fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Attractions</h5>
+                        <p class="card-text">Découvrez les sites incontournables à visiter.</p>
+                        <a th:href="@{/attractions}" class="btn btn-outline-primary">Explorer</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-search fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Rechercher</h5>
+                        <p class="card-text">Trouvez de nouvelles destinations à explorer.</p>
+                        <a th:href="@{/destinations}" class="btn btn-outline-primary">Rechercher</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center">
+                    <div class="card-body">
+                        <i class="fas fa-robot fa-3x mb-3 text-primary"></i>
+                        <h5 class="card-title">Assistant de Voyage</h5>
+                        <p class="card-text">Posez des questions et obtenez de l'aide pour planifier vos voyages.</p>
+                        <a th:href="@{/simple-assistant}" class="btn btn-outline-primary">Discuter</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section d'administration (admin uniquement) -->
+        <div class="row mb-5" sec:authorize="hasRole('ADMIN')">
+            <div class="col-12">
+                <h2><i class="fas fa-user-shield"></i> Administration</h2>
+                <hr class="my-4">
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-users-cog fa-3x mb-3 text-secondary"></i>
+                        <h5 class="card-title">Gestion des utilisateurs</h5>
+                        <p class="card-text">Administrez les comptes utilisateurs et leurs rôles.</p>
+                        <a th:href="@{/admin/users}" class="btn btn-secondary">Gérer</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-clipboard-list fa-3x mb-3 text-secondary"></i>
+                        <h5 class="card-title">Toutes les réservations</h5>
+                        <p class="card-text">Consultez et gérez les réservations de tous les utilisateurs.</p>
+                        <a th:href="@{/admin/reservations}" class="btn btn-secondary">Gérer</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-globe-americas fa-3x mb-3 text-secondary"></i>
+                        <h5 class="card-title">Gestion des destinations</h5>
+                        <p class="card-text">Ajoutez ou modifiez les destinations proposées.</p>
+                        <a th:href="@{/admin/destinations}" class="btn btn-secondary">Gérer</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="card h-100 text-center bg-light">
+                    <div class="card-body">
+                        <i class="fas fa-tachometer-alt fa-3x mb-3 text-secondary"></i>
+                        <h5 class="card-title">Tableau de bord</h5>
+                        <p class="card-text">Accédez au panneau d'administration complet.</p>
+                        <a th:href="@{/admin}" class="btn btn-secondary">Accéder</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section pour les non-connectés -->
+        <div class="row mb-5" sec:authorize="!isAuthenticated()">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h4><i class="fas fa-info-circle"></i> Connectez-vous pour profiter de toutes les fonctionnalités</h4>
+                    <p>En vous connectant, vous pourrez réserver des voyages, gérer vos itinéraires et bien plus encore.</p>
+                    <div class="mt-3">
+                        <a th:href="@{/login}" class="btn btn-primary me-2">Connexion</a>
+                        <a th:href="@{/register}" class="btn btn-outline-primary">Inscription</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Nouveau Chatbot IA -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2><i class="fas fa-robot"></i> Nouveau ! Assistant de Voyage Intelligent</h2>
+                <hr class="my-4">
+            </div>
+            <div class="col-md-8">
+                <div class="card border-primary">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary p-3 text-white rounded-circle me-3">
+                                <i class="fas fa-bolt fa-2x"></i>
+                            </div>
+                            <div>
+                                <h3 class="card-title">Assistant de Voyage avec Llama 3</h3>
+                                <p class="mb-0 text-muted">Propulsé par Groq Cloud</p>
+                            </div>
+                        </div>
+                        <p class="card-text">Découvrez notre nouvel assistant de voyage basé sur l'intelligence artificielle Llama 3 (70B). Posez vos questions sur les destinations, la planification, les budgets, et obtenez des réponses détaillées et personnalisées en temps réel.</p>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Réponses ultra-rapides grâce à Groq</li>
+                            <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Conseils personnalisés pour vos voyages</li>
+                            <li class="list-group-item"><i class="fas fa-check-circle text-success me-2"></i> Informations à jour sur les destinations</li>
+                        </ul>
+                        <a href="/chatbot/groq" class="btn btn-primary"><i class="fas fa-comments me-2"></i> Essayer maintenant</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title mb-3">Autres versions disponibles</h5>
+                        <div class="d-grid gap-2">
+                            <a href="/assistant-voyage.html" class="btn btn-outline-secondary"><i class="fas fa-brain me-2"></i> Assistant Standard</a>
+                            <a href="/chatbot/llama" class="btn btn-outline-secondary"><i class="fas fa-robot me-2"></i> Version Llama locale</a>
+                        </div>
+                        <hr>
+                        <p class="card-text mt-3"><small>Notre assistant utilise la technologie Llama développée par Meta et est propulsé par l'infrastructure Groq Cloud pour des performances optimales.</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-code"></i> API</h2>
+                <hr class="my-4">
+                <p>Accédez à notre documentation API pour intégrer nos services à vos applications.</p>
+                <a th:href="@{/swagger-ui.html}" target="_blank" class="btn btn-outline-dark">
+                    <i class="fas fa-book"></i> Documentation API
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+</body>
+</html>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title th:text="${title}">Toutes les réservations - TravelAppV2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <header>
+        <div>
+            <a th:href="@{/}">Accueil</a> |
+            <a th:href="@{/admin}">Panneau admin</a> |
+            <span sec:authentication="name">Admin</span> |
+            <a th:href="@{/logout}">Déconnexion</a>
+        </div>
+    </header>
+
+    <h1>Gestion des réservations</h1>
+    
+    <div th:if="${success}" class="alert alert-success" th:text="${success}">
+        Opération réussie.
+    </div>
+    
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}">
+        Une erreur est survenue.
+    </div>
+    
+    <div th:if="${reservationPage.empty}">
+        <p>Aucune réservation n'a été effectuée.</p>
+    </div>
+    
+    <div th:if="${!reservationPage.empty}">
+        <table>
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Destination</th>
+                    <th>Date de début</th>
+                    <th>Date de fin</th>
+                    <th>Participants</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="reservation : ${reservationPage.content}">
+                    <td th:text="${reservation.user.username}">Utilisateur</td>
+                    <td th:text="${reservation.destination.name}">Destination</td>
+                    <td th:text="${#temporals.format(reservation.startDate, 'dd/MM/yyyy')}">01/01/2025</td>
+                    <td th:text="${#temporals.format(reservation.endDate, 'dd/MM/yyyy')}">08/01/2025</td>
+                    <td th:text="${reservation.numberOfPeople}">2</td>
+                    <td th:text="${reservation.confirmed} ? 'Confirmée' : 'En attente'">Statut</td>
+                    <td>
+                        <a th:href="@{/reservations/{id}(id=${reservation.id})}" class="btn btn-info">Détails</a>
+                        
+                        <form th:if="${!reservation.confirmed}" 
+                              th:action="@{/reservations/manage/confirm/{id}(id=${reservation.id})}" 
+                              method="post" style="display: inline-block;">
+                            <button type="submit" class="btn btn-success">Confirmer</button>
+                        </form>
+                        
+                        <form th:action="@{/reservations/cancel/{id}(id=${reservation.id})}" 
+                              method="post" style="display: inline-block;">
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('Êtes-vous sûr de vouloir annuler cette réservation?');">
+                                Annuler
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        <div th:if="${totalPages > 1}" class="pagination">
+            <a th:if="${currentPage > 0}" th:href="@{/reservations/all(page=${currentPage - 1})}">Précédent</a>
+            <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:if="${i != currentPage}" th:href="@{/reservations/all(page=${i})}" th:text="${i + 1}">1</a>
+                <span th:if="${i == currentPage}" th:text="${i + 1}">1</span>
+            </span>
+            <a th:if="${currentPage < totalPages - 1}" th:href="@{/reservations/all(page=${currentPage + 1})}">Suivant</a>
+        </div>
+    </div>
+</body>
+</html>

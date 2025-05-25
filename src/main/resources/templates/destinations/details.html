@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title=${destination.name} + ' - TravelAppV2')">
+    <title>Détails de la destination - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/destinations}">Destinations</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${destination.name}">Destination</li>
+            </ol>
+        </nav>
+        
+        <!-- En-tête de la destination -->
+        <div class="row mb-5">
+            <div class="col-md-8">
+                <div class="position-relative mb-4">
+                    <img th:src="${destination.imageUrl}" class="img-fluid rounded shadow-sm w-100" alt="${destination.name}" style="max-height: 400px; object-fit: cover;">
+                    <div class="position-absolute top-0 end-0 p-3 bg-primary text-white rounded-pill m-3" th:if="${destination.rating != null}">
+                        <i class="fas fa-star"></i> <span th:text="${#numbers.formatDecimal(destination.rating, 1, 1)}">4.5</span>
+                    </div>
+                </div>
+                
+                <h1 class="display-4" th:text="${destination.name}">Nom de la destination</h1>
+                <h3 class="text-muted mb-4" th:text="${destination.city} + ', ' + ${destination.country}">Ville, Pays</h3>
+                
+                <!-- Description -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title"><i class="fas fa-info-circle text-primary me-2"></i>À propos</h4>
+                        <p class="card-text lead" th:text="${destination.shortDescription}">Description courte</p>
+                        <hr class="my-3">
+                        <p class="card-text" th:text="${destination.description}">Description complète</p>
+                    </div>
+                </div>
+                
+                <!-- Attractions si disponibles -->
+                <div class="card shadow-sm mb-4" th:if="${!#lists.isEmpty(destination.attractions)}">
+                    <div class="card-body">
+                        <h4 class="card-title"><i class="fas fa-map-marker-alt text-primary me-2"></i>Points d'intérêt</h4>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item" th:each="attraction : ${destination.attractions}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1" th:text="${attraction.name}">Nom de l'attraction</h5>
+                                </div>
+                                <p class="mb-1" th:text="${attraction.description}">Description de l'attraction</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Carte latérale avec des actions -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4 sticky-top" style="top: 100px;">
+                    <div class="card-body">
+                        <h4 class="card-title text-center mb-3">Réserver cette destination</h4>
+                        
+                        <div class="d-grid gap-2 mb-4">
+                            <a th:href="@{'/reservations/book/' + ${destination.id}}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-calendar-alt me-2"></i>Réserver maintenant
+                            </a>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>Réservez à l'avance pour garantir votre place !
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Options d'administration -->
+                <div class="card shadow-sm mb-4" sec:authorize="hasRole('ADMIN')">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">Administration</h5>
+                        <div class="d-grid gap-2">
+                            <a th:href="@{'/destinations/edit/' + ${destination.id}}" class="btn btn-outline-primary">
+                                <i class="fas fa-edit me-2"></i>Modifier
+                            </a>
+                            <a th:href="@{'/destinations/delete/' + ${destination.id}}" class="btn btn-outline-danger" 
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette destination ?');">
+                                <i class="fas fa-trash-alt me-2"></i>Supprimer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section de réservations récentes (administrateur uniquement) -->
+        <div class="row mb-4" sec:authorize="hasRole('ADMIN')">
+            <div class="col-12">
+                <h3><i class="fas fa-clipboard-list me-2"></i>Réservations récentes</h3>
+                <p>Cette section affichera les réservations récentes pour cette destination (fonctionnalité à implémenter).</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+
+    <!-- Script spécifique à la page -->
+    <script th:inline="javascript">
+        // Script pour afficher une carte si les coordonnées sont disponibles
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cette section pourrait être utilisée pour initialiser une carte si les coordonnées sont disponibles
+        });
+    </script>
+</body>
+</html>

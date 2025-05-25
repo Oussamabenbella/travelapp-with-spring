@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Planifier un voyage - TravelAppV2')">
+    <title>Planifier un voyage - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <!-- Titre et navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/trips}">Mes Voyages</a></li>
+                        <li class="breadcrumb-item active" aria-current="page" th:text="${trip.id != null ? 'Modifier' : 'Planifier'}">Planifier</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="display-5 mb-3">
+                    <i class="fas fa-route me-3 text-primary"></i>
+                    <span th:text="${trip.id != null ? 'Modifier mon voyage' : 'Planifier un nouveau voyage'}">Planifier un nouveau voyage</span>
+                </h1>
+                <p class="lead" th:if="${trip.id == null}">Définissez les détails de votre voyage pour commencer votre planification.</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Formulaire principal -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Informations générales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/trips/save}" th:object="${trip}" method="post" class="needs-validation" novalidate>
+                            <input type="hidden" th:field="*{id}" />
+                            
+                            <!-- Titre du voyage -->
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Titre du voyage <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="title" th:field="*{title}" placeholder="Ex: Vacances d'été à Bali" required />
+                                <div class="invalid-feedback">Veuillez saisir un titre pour votre voyage.</div>
+                                <small class="form-text text-muted">Donnez un nom mémorable à votre voyage.</small>
+                            </div>
+                            
+                            <!-- Destination -->
+                            <div class="mb-3">
+                                <label for="destination" class="form-label">Destination</label>
+                                <select class="form-select" id="destination" th:field="*{destination}">
+                                    <option value="">-- Sélectionnez une destination --</option>
+                                    <option th:each="destination : ${destinations}" th:value="${destination.id}" th:text="${destination.name}">Paris</option>
+                                </select>
+                                <small class="form-text text-muted">Vous pourrez ajouter des attractions associées à cette destination ultérieurement.</small>
+                            </div>
+                            
+                            <!-- Dates -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="startDate" class="form-label">Date de début <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="startDate" th:field="*{startDate}" required />
+                                    <div class="invalid-feedback">Veuillez sélectionner une date de début.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="endDate" class="form-label">Date de fin <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="endDate" th:field="*{endDate}" required />
+                                    <div class="invalid-feedback">Veuillez sélectionner une date de fin.</div>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <small class="form-text text-muted">Les dates vous aideront à organiser votre calendrier de voyage.</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Budget -->
+                            <div class="mb-3">
+                                <label for="budget" class="form-label">Budget (€)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0" class="form-control" id="budget" th:field="*{budget}" placeholder="Ex: 1500" />
+                                    <span class="input-group-text">€</span>
+                                </div>
+                                <small class="form-text text-muted">Définissez le budget global pour ce voyage.</small>
+                            </div>
+                            
+                            <!-- Statut -->
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Statut</label>
+                                <select class="form-select" id="status" th:field="*{status}">
+                                    <option value="PLANNING">En planification</option>
+                                    <option value="BOOKED">Réservé</option>
+                                    <option value="ONGOING">En cours</option>
+                                    <option value="COMPLETED">Terminé</option>
+                                    <option value="CANCELLED">Annulé</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Notes -->
+                            <div class="mb-3">
+                                <label for="notes" class="form-label">Notes et remarques</label>
+                                <textarea class="form-control" id="notes" th:field="*{notes}" rows="4" placeholder="Ex: Ne pas oublier de réserver les billets d'avion..."></textarea>
+                                <small class="form-text text-muted">Ajoutez des notes ou des remarques sur votre voyage.</small>
+                            </div>
+                            
+                            <!-- Boutons d'action -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <a th:href="@{/trips}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Retour à la liste
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Enregistrer le voyage
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Section des attractions (uniquement en mode édition) -->
+                <div class="card shadow-sm mb-4" th:if="${trip.id != null}">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-camera me-2 text-primary"></i>Attractions sélectionnées
+                        </h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus me-1"></i>Ajouter une attraction
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Si des attractions sont sélectionnées -->
+                        <div th:if="${!#lists.isEmpty(trip.attractions)}">
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                <div class="col" th:each="attraction : ${trip.attractions}">
+                                    <div class="card h-100">
+                                        <div class="row g-0">
+                                            <div class="col-4">
+                                                <img th:if="${attraction.imageUrl != null}" th:src="${attraction.imageUrl}" 
+                                                     class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="Image de l'attraction">
+                                                <div th:unless="${attraction.imageUrl != null}" 
+                                                     class="bg-light d-flex align-items-center justify-content-center h-100 rounded-start">
+                                                    <i class="fas fa-camera fa-2x text-muted"></i>
+                                                </div>
+                                            </div>
+                                            <div class="col-8">
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title" th:text="${attraction.name}">Nom de l'attraction</h6>
+                                                    <p class="card-text small" th:if="${attraction.price != null}">
+                                                        <i class="fas fa-tag me-1 text-primary"></i>
+                                                        <span th:text="${#numbers.formatDecimal(attraction.price, 1, 2) + ' €'}">15.00 €</span>
+                                                    </p>
+                                                    <button class="btn btn-sm btn-outline-danger float-end">
+                                                        <i class="fas fa-times"></i> Retirer
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Si aucune attraction n'est sélectionnée -->
+                        <div th:if="${#lists.isEmpty(trip.attractions)}" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                                <p>Aucune attraction n'a été ajoutée à ce voyage.</p>
+                                <button type="button" class="btn btn-primary">
+                                    <i class="fas fa-plus-circle me-2"></i>Ajouter des attractions
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panneau latéral d'aide -->
+            <div class="col-lg-4">
+                <!-- Aide à la planification -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-lightbulb me-2 text-warning"></i>Conseils de planification
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6><i class="fas fa-calendar-alt me-2 text-primary"></i>Dates</h6>
+                            <p class="small">Choisissez des dates qui vous laissent assez de temps pour préparer votre voyage (réservations, visas, etc.).</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-money-bill-wave me-2 text-primary"></i>Budget</h6>
+                            <p class="small">Pensez à inclure dans votre budget : transport, hébergement, nourriture, activités et une réserve pour les imprévus.</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6><i class="fas fa-map-marked-alt me-2 text-primary"></i>Attractions</h6>
+                            <p class="small">Une fois votre voyage enregistré, vous pourrez y associer des attractions pour mieux planifier vos journées.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions rapides pour l'édition uniquement -->
+                <div class="card shadow-sm mb-4" th:if="${trip.id != null}">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-bolt me-2 text-primary"></i>Actions rapides
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" type="button">
+                                <i class="fas fa-print me-2"></i>Imprimer l'itinéraire
+                            </button>
+                            <button class="btn btn-outline-info" type="button">
+                                <i class="fas fa-share-alt me-2"></i>Partager ce voyage
+                            </button>
+                            <button class="btn btn-outline-warning" type="button">
+                                <i class="fas fa-copy me-2"></i>Dupliquer ce voyage
+                            </button>
+                            <a th:href="@{'/trips/delete/' + ${trip.id}}" class="btn btn-outline-danger" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce voyage ?');">
+                                <i class="fas fa-trash-alt me-2"></i>Supprimer ce voyage
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- Script de validation du formulaire -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validation du formulaire
+        const forms = document.querySelectorAll('.needs-validation');
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+        
+        // Validation des dates
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        
+        if (startDateInput && endDateInput) {
+            endDateInput.addEventListener('change', function() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                
+                if (startDate > endDate) {
+                    endDateInput.setCustomValidity('La date de fin doit être postérieure à la date de début');
+                } else {
+                    endDateInput.setCustomValidity('');
+                }
+            });
+            
+            startDateInput.addEventListener('change', function() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                
+                if (endDate < startDate && endDateInput.value !== '') {
+                    startDateInput.setCustomValidity('La date de début doit être antérieure à la date de fin');
+                } else {
+                    startDateInput.setCustomValidity('');
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>

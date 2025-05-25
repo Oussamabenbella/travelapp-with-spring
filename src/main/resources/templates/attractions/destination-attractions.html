@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Attractions de ' + ${destination.name} + ' - TravelAppV2')">
+    <title>Attractions de la destination - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/destinations}">Destinations</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{'/destinations/' + ${destination.id}}" th:text="${destination.name}">Destination</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Attractions</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center">
+                    <div th:if="${destination.imageUrl}" class="me-4">
+                        <img th:src="${destination.imageUrl}" class="rounded-circle shadow-sm" alt="${destination.name}" 
+                             style="width: 80px; height: 80px; object-fit: cover;">
+                    </div>
+                    <div>
+                        <h1 class="display-5 mb-0">
+                            <i class="fas fa-camera me-3 text-primary"></i>
+                            Attractions à <span th:text="${destination.name}">Destination</span>
+                        </h1>
+                        <p class="lead" th:if="${destination.city != null && destination.country != null}">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            <span th:text="${destination.city + ', ' + destination.country}">Ville, Pays</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end" sec:authorize="hasRole('ADMIN')">
+                <a th:href="@{'/attractions/create/destination/' + ${destination.id}}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Ajouter une attraction
+                </a>
+            </div>
+        </div>
+        
+        <!-- Liste des attractions -->
+        <div class="row">
+            <!-- Message si aucune attraction n'est disponible -->
+            <div class="col-12 text-center" th:if="${#lists.isEmpty(attractions)}">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i> 
+                    Aucune attraction n'est disponible pour cette destination pour le moment.
+                    <div class="mt-3" sec:authorize="hasRole('ADMIN')">
+                        <a th:href="@{'/attractions/create/destination/' + ${destination.id}}" class="btn btn-primary">
+                            <i class="fas fa-plus-circle me-2"></i>Ajouter une attraction
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Attractions -->
+            <div class="col-md-4 mb-4" th:each="attraction : ${attractions}">
+                <div class="card h-100 shadow-sm hover-card">
+                    <div class="position-relative">
+                        <img th:src="${attraction.imageUrl != null ? attraction.imageUrl : 'https://images.unsplash.com/photo-1503095396549-807759245b35'}" 
+                             class="card-img-top" alt="${attraction.name}" style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 end-0 p-2 bg-primary text-white rounded-pill m-2" th:if="${attraction.rating != null}">
+                            <i class="fas fa-star"></i> <span th:text="${attraction.rating}">4</span>/5
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 p-2 bg-dark bg-opacity-75 text-white m-2 rounded" th:if="${attraction.price != null}">
+                            <i class="fas fa-tag me-1"></i> <span th:text="${#numbers.formatDecimal(attraction.price, 1, 2) + ' €'}">10.00 €</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title" th:text="${attraction.name}">Nom de l'attraction</h5>
+                        <p class="card-subtitle mb-2 text-muted" th:if="${attraction.location != null}">
+                            <i class="fas fa-map-marker-alt me-1"></i> <span th:text="${attraction.location}">Localisation</span>
+                        </p>
+                        <p class="card-text" th:text="${attraction.description != null ? (attraction.description.length() > 100 ? attraction.description.substring(0, 100) + '...' : attraction.description) : 'Aucune description disponible.'}">Description</p>
+                        
+                        <div class="mt-auto d-flex justify-content-center">
+                            <a th:href="@{'/attractions/' + ${attraction.id}}" class="btn btn-primary">
+                                <i class="fas fa-info-circle me-1"></i> Détails
+                            </a>
+                        </div>
+                        
+                        <!-- Options d'administration -->
+                        <div class="mt-3 d-flex justify-content-between" sec:authorize="hasRole('ADMIN')">
+                            <a th:href="@{'/attractions/edit/' + ${attraction.id}}" class="btn btn-sm btn-outline-secondary w-50 me-1">
+                                <i class="fas fa-edit"></i> Modifier
+                            </a>
+                            <a th:href="@{'/attractions/delete/' + ${attraction.id}(destinationId=${destination.id})}" 
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette attraction ?');" 
+                               class="btn btn-sm btn-outline-danger w-50 ms-1">
+                                <i class="fas fa-trash-alt"></i> Supprimer
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a th:href="@{'/destinations/' + ${destination.id}}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Retour à la destination
+                    </a>
+                    <a th:href="@{/attractions}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>Toutes les attractions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <!-- CSS supplémentaire pour les effets de survol -->
+    <style>
+        .hover-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .hover-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant de Voyage IA | TravelApp</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .chat-container {
+            height: 70vh;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        .assistant-message {
+            background-color: #e9ecef;
+            color: #212529;
+            align-self: flex-start;
+        }
+        .message-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 50px;
+            height: 30px;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #777;
+            border-radius: 50%;
+            margin-right: 3px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+            margin-right: 0;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 0.5; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.5); opacity: 0.5; }
+        }
+        .conversation-list {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .conversation-item {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .conversation-item:hover {
+            background-color: #f1f3f5;
+        }
+        .conversation-item.active {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        .sidebar {
+            border-right: 1px solid #dee2e6;
+            height: 100vh;
+        }
+        .message pre {
+            color: inherit;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        .assistant-message a {
+            color: #0056b3;
+        }
+        .message-time {
+            font-size: 0.7em;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar avec liste des conversations -->
+            <div class="col-md-3 sidebar px-0">
+                <div class="p-3 bg-primary text-white">
+                    <h4>Assistant de Voyage</h4>
+                </div>
+                <div class="p-3">
+                    <form th:action="@{/assistant/new}" method="post">
+                        <button type="submit" class="btn btn-success w-100 mb-3">
+                            <i class="fas fa-plus"></i> Nouvelle conversation
+                        </button>
+                    </form>
+                </div>
+                <div class="conversation-list">
+                    <div th:each="conv : ${conversations}" 
+                         th:class="'conversation-item ' + (${conv.id == activeConversation.id} ? 'active' : '')"
+                         th:onclick="'window.location.href=\'/assistant/' + ${conv.id} + '\''">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-comments me-2"></i>
+                                <span th:text="${conv.title}">Titre de la conversation</span>
+                            </div>
+                            <small th:text="${#temporals.format(conv.updatedAt, 'dd/MM/yyyy')}">Date</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Zone principale de chat -->
+            <div class="col-md-9">
+                <div class="p-3">
+                    <h3 th:text="${activeConversation.title}">Conversation</h3>
+                    <div class="chat-container" id="chatContainer">
+                        <div class="message-container">
+                            <!-- Messages de la conversation -->
+                            <div th:each="msg : ${activeConversation.messages}" 
+                                 th:if="${msg.role.name() != 'SYSTEM'}"
+                                 th:class="'message ' + (${msg.role.name() == 'USER'} ? 'user-message' : 'assistant-message')">
+                                <div th:utext="${#strings.replace(#strings.escapeXml(msg.content), '&#10;', '<br/>')}">Message content</div>
+                                <div class="message-time" th:text="${#temporals.format(msg.timestamp, 'HH:mm')}">10:30</div>
+                            </div>
+                            
+                            <!-- Indicateur de frappe (caché par défaut) -->
+                            <div class="message assistant-message typing" style="display: none;">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulaire d'envoi de message -->
+                    <form id="messageForm" class="mt-3">
+                        <div class="input-group">
+                            <input type="text" id="messageInput" class="form-control" placeholder="Posez votre question à l'assistant..." required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Envoyer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            const chatContainer = $('#chatContainer');
+            const messageForm = $('#messageForm');
+            const messageInput = $('#messageInput');
+            const conversationId = /*[[${activeConversation.id}]]*/ '1';
+            
+            // Scroll to the bottom of the chat container
+            function scrollToBottom() {
+                chatContainer.scrollTop(chatContainer[0].scrollHeight);
+            }
+            
+            // Initialize by scrolling to the bottom
+            scrollToBottom();
+            
+            // Function to format the message content as markdown
+            function formatMessage(content) {
+                return marked.parse(content);
+            }
+            
+            // Submit message form
+            messageForm.on('submit', function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.val().trim();
+                if (!message) return;
+                
+                // Add user message to the chat
+                const userMessageHtml = `
+                    <div class="message user-message">
+                        <div>${message.replace(/\\n/g, '<br/>')}</div>
+                        <div class="message-time">${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
+                    </div>
+                `;
+                
+                chatContainer.find('.message-container').append(userMessageHtml);
+                messageInput.val('');
+                scrollToBottom();
+                
+                // Show typing indicator
+                $('.typing').show();
+                scrollToBottom();
+                
+                // Send message to server
+                $.ajax({
+                    url: `/assistant/${conversationId}/message`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function(data) {
+                        // Hide typing indicator
+                        $('.typing').hide();
+                        
+                        // Add assistant response to the chat
+                        const formattedResponse = formatMessage(data.response);
+                        const assistantMessageHtml = `
+                            <div class="message assistant-message">
+                                <div>${formattedResponse}</div>
+                                <div class="message-time">${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
+                        `;
+                        
+                        chatContainer.find('.message-container').append(assistantMessageHtml);
+                        scrollToBottom();
+                    },
+                    error: function() {
+                        // Hide typing indicator
+                        $('.typing').hide();
+                        
+                        // Show error message
+                        const errorMessageHtml = `
+                            <div class="message assistant-message">
+                                <div>Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer plus tard.</div>
+                                <div class="message-time">${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
+                        `;
+                        
+                        chatContainer.find('.message-container').append(errorMessageHtml);
+                        scrollToBottom();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

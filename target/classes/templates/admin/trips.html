@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Gestion des voyages - TravelAppV2</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom styles -->
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+        }
+        .sidebar .nav-link {
+            color: #333;
+            padding: .75rem 1rem;
+        }
+        .sidebar .nav-link.active {
+            color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .admin-content {
+            padding: 1.5rem;
+        }
+        .trip-card {
+            transition: transform 0.3s ease;
+        }
+        .trip-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar de navigation -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold text-primary">TravelAppV2</h4>
+                        <p class="text-muted">Panneau d'administration</p>
+                    </div>
+                    <hr>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin}">
+                                <i class="fas fa-tachometer-alt me-2"></i> Tableau de bord
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/users}">
+                                <i class="fas fa-users me-2"></i> Utilisateurs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/reservations}">
+                                <i class="fas fa-clipboard-list me-2"></i> Réservations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/destinations}">
+                                <i class="fas fa-map-marker-alt me-2"></i> Destinations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/attractions}">
+                                <i class="fas fa-camera me-2"></i> Attractions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/admin/trips}">
+                                <i class="fas fa-route me-2"></i> Voyages
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle p-2" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <strong sec:authentication="name">Admin</strong>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item" th:href="@{/logout}"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+            
+            <!-- Contenu principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 admin-content">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2"><i class="fas fa-route text-primary me-2"></i>Gestion des voyages</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTripModal">
+                            <i class="fas fa-plus me-1"></i> Nouveau voyage
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Alerte de succès ou d'erreur -->
+                <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i><span th:text="${success}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-circle me-2"></i><span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Filtres de recherche -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtrer les voyages</h5>
+                    </div>
+                    <div class="card-body">
+                        <form class="row g-3">
+                            <div class="col-md-4">
+                                <label for="searchQuery" class="form-label">Recherche</label>
+                                <input type="text" class="form-control" id="searchQuery" placeholder="Nom, description...">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="dateFilter" class="form-label">Date de début</label>
+                                <input type="date" class="form-control" id="dateFilter">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="statusFilter" class="form-label">Statut</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">Tous les statuts</option>
+                                    <option value="PLANNED">Planifié</option>
+                                    <option value="ONGOING">En cours</option>
+                                    <option value="COMPLETED">Terminé</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-search me-1"></i> Rechercher
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Voyages -->
+                <div class="row g-4">
+                    <div class="col-md-6 col-lg-4" th:each="trip : ${trips}">
+                        <div class="card h-100 shadow-sm trip-card">
+                            <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                                <h5 class="card-title mb-0" th:text="${trip.name}">Tour d'Europe</h5>
+                                <span th:if="${trip.status == 'PLANNED'}" class="badge bg-warning text-dark">Planifié</span>
+                                <span th:if="${trip.status == 'ONGOING'}" class="badge bg-success">En cours</span>
+                                <span th:if="${trip.status == 'COMPLETED'}" class="badge bg-secondary">Terminé</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="flex-shrink-0 me-3">
+                                        <div class="bg-light rounded p-3">
+                                            <i class="fas fa-suitcase-rolling fa-2x text-primary"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-1">
+                                            <i class="far fa-calendar-alt me-1"></i>
+                                            <span th:text="${#temporals.format(trip.startDate, 'dd/MM/yyyy')}">01/06/2025</span>
+                                            <span class="mx-1">-</span>
+                                            <span th:text="${#temporals.format(trip.endDate, 'dd/MM/yyyy')}">15/06/2025</span>
+                                        </p>
+                                        <p class="mb-0">
+                                            <i class="fas fa-user-friends me-1"></i>
+                                            <span th:text="${trip.user ? trip.user.username : 'Non assigné'}">Jean Dupont</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <p class="card-text text-truncate mb-2" th:text="${trip.description}">Un voyage à travers les plus belles capitales d'Europe.</p>
+                                <hr>
+                                <div class="d-flex justify-content-between">
+                                    <span>
+                                        <i class="fas fa-map-marker-alt text-danger me-1"></i>
+                                        <span th:text="${trip.destinations != null && !trip.destinations.empty ? trip.destinations.size() : '0'}">3</span> destinations
+                                    </span>
+                                    <span>
+                                        <i class="fas fa-camera text-success me-1"></i>
+                                        <span th:text="${trip.attractions != null && !trip.attractions.empty ? trip.attractions.size() : '0'}">8</span> attractions
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex justify-content-between">
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" title="Voir détails" data-bs-toggle="tooltip">
+                                        <i class="fas fa-eye me-1"></i> Détails
+                                    </button>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary me-1" title="Modifier" data-bs-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Supprimer" data-bs-toggle="tooltip">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Message si aucun voyage n'est trouvé -->
+                    <div th:if="${trips == null || trips.empty}" class="col-12">
+                        <div class="alert alert-info text-center" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Aucun voyage trouvé. Commencez à planifier de nouveaux voyages !
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-center mt-4">
+                    <nav aria-label="Navigation des pages">
+                        <ul class="pagination">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item"><a class="page-link" href="#">2</a></li>
+                            <li class="page-item"><a class="page-link" href="#">3</a></li>
+                            <li class="page-item">
+                                <a class="page-link" href="#">Suivant</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- Modal pour ajouter un voyage -->
+                <div class="modal fade" id="addTripModal" tabindex="-1" aria-labelledby="addTripModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="addTripModalLabel">Ajouter un voyage</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="tripForm" th:action="@{/admin/trips/add}" method="post">
+                                    <div class="mb-3">
+                                        <label for="tripName" class="form-label">Nom du voyage</label>
+                                        <input type="text" class="form-control" id="tripName" name="name" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="tripDescription" class="form-label">Description</label>
+                                        <textarea class="form-control" id="tripDescription" name="description" rows="3" required></textarea>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="startDate" class="form-label">Date de début</label>
+                                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="endDate" class="form-label">Date de fin</label>
+                                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">Statut</label>
+                                        <select class="form-select" id="status" name="status" required>
+                                            <option value="PLANNED">Planifié</option>
+                                            <option value="ONGOING">En cours</option>
+                                            <option value="COMPLETED">Terminé</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userId" class="form-label">Utilisateur</label>
+                                        <select class="form-select" id="userId" name="userId">
+                                            <option value="">Sélectionner un utilisateur</option>
+                                            <!-- Les utilisateurs seraient normalement chargés dynamiquement ici -->
+                                        </select>
+                                        <small class="form-text text-muted">Optionnel - laissez vide pour créer un voyage non assigné</small>
+                                    </div>
+                                    
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap & JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialisation des tooltips Bootstrap
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+            
+            // Validation des dates
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            
+            endDateInput.addEventListener('change', function() {
+                if (startDateInput.value && endDateInput.value) {
+                    if (new Date(endDateInput.value) < new Date(startDateInput.value)) {
+                        alert('La date de fin ne peut pas être antérieure à la date de début.');
+                        endDateInput.value = '';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

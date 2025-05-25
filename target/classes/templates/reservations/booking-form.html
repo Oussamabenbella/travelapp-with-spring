@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="fragments/layout :: head(title='Réserver ' + ${destination.name} + ' - TravelAppV2')">
+    <title>Réserver une destination - TravelAppV2</title>
+</head>
+<body>
+    <!-- Menu de navigation -->
+    <nav th:replace="fragments/layout :: navbar"></nav>
+    
+    <!-- Alertes -->
+    <div th:replace="fragments/layout :: alerts"></div>
+    
+    <div class="container py-5">
+        <!-- Titre et navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a th:href="@{/}">Accueil</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{/destinations}">Destinations</a></li>
+                        <li class="breadcrumb-item"><a th:href="@{'/destinations/' + ${destination.id}}" th:text="${destination.name}">Destination</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Réserver</li>
+                    </ol>
+                </nav>
+                
+                <h1 class="display-5 mb-4">
+                    <i class="fas fa-calendar-check me-3 text-primary"></i>Réserver <span th:text="${destination.name}">Destination</span>
+                </h1>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Section principale -->
+            <div class="col-lg-8">
+                <!-- Informations sur la destination -->
+                <div class="card shadow-sm mb-4" th:if="${destination != null}">
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                <img th:if="${destination.imageUrl != null}" th:src="${destination.imageUrl}" 
+                                     class="img-fluid rounded-start h-100" style="object-fit: cover;" alt="Image de la destination">
+                                <div th:unless="${destination.imageUrl != null}" 
+                                     class="bg-light d-flex align-items-center justify-content-center h-100 rounded-start">
+                                    <i class="fas fa-image fa-4x text-muted"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <h2 class="card-title h4" th:text="${destination.name}">Nom de la destination</h2>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                        <span th:text="${destination.city} + ', ' + ${destination.country}">Paris, France</span>
+                                    </div>
+                                    <p class="card-text" th:text="${#strings.abbreviate(destination.description, 200)}">Description de la destination</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- Formulaire de réservation -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h3 class="card-title h5 mb-0">
+                            <i class="fas fa-clipboard-list me-2 text-primary"></i>Informations de réservation
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/reservations/book/{id}(id=${destination.id})}" th:object="${reservation}" method="post" class="needs-validation" novalidate>
+                            
+                            <!-- Choix des dates -->
+                            <div class="row mb-4">
+                                <div class="col-12 mb-3">
+                                    <h4 class="h6"><i class="fas fa-calendar-alt me-2 text-primary"></i>Sélectionnez vos dates</h4>
+                                    <hr class="my-2">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="startDate" class="form-label">Date d'arrivée <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                        <input type="date" id="startDate" th:field="*{startDate}" class="form-control" required />
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}">Veuillez sélectionner une date d'arrivée valide.</div>
+                                    <small class="form-text text-muted">Arrivée à partir de 14h00</small>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="endDate" class="form-label">Date de départ <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                        <input type="date" id="endDate" th:field="*{endDate}" class="form-control" required />
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">Veuillez sélectionner une date de départ valide.</div>
+                                    <small class="form-text text-muted">Départ jusqu'à 12h00</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Visiteurs -->
+                            <div class="row mb-4">
+                                <div class="col-12 mb-3">
+                                    <h4 class="h6"><i class="fas fa-users me-2 text-primary"></i>Informations sur les voyageurs</h4>
+                                    <hr class="my-2">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="numberOfPeople" class="form-label">Nombre de participants <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-user-friends"></i></span>
+                                        <input type="number" id="numberOfPeople" th:field="*{numberOfPeople}" min="1" max="20" class="form-control" required />
+                                        <button type="button" class="btn btn-outline-secondary" onclick="decrementPeople()"><i class="fas fa-minus"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="incrementPeople()"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('numberOfPeople')}" th:errors="*{numberOfPeople}">Veuillez indiquer un nombre de participants valide (entre 1 et 20).</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Remarques -->
+                            <div class="row mb-4">
+                                <div class="col-12 mb-3">
+                                    <h4 class="h6"><i class="fas fa-comment me-2 text-primary"></i>Remarques spéciales</h4>
+                                    <hr class="my-2">
+                                </div>
+                                <div class="col-12">
+                                    <label for="notes" class="form-label">Vos remarques (optionnel)</label>
+                                    <textarea id="notes" th:field="*{notes}" class="form-control" rows="3" placeholder="Préférences, demandes spéciales..."></textarea>
+                                    <small class="form-text text-muted">Avez-vous des requêtes spéciales? (sous réserve de disponibilité)</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Message de disponibilité -->
+                            <div id="availability-message" style="display: none;" class="alert alert-warning mb-4">
+                                <i class="fas fa-clock me-2"></i>Vérification de la disponibilité...
+                            </div>
+                            
+                            <!-- Récapitulatif de la réservation sur mobile uniquement -->
+                            <div class="d-lg-none mb-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Récapitulatif</h5>
+                                        <ul class="list-unstyled">
+                                            <li><i class="fas fa-map-marker-alt me-2 text-danger"></i><span id="mobile-destination" th:text="${destination.name}">Destination</span></li>
+                                            <li><i class="fas fa-calendar me-2 text-primary"></i><span id="mobile-dates">Dates sélectionnées</span></li>
+                                            <li><i class="fas fa-users me-2 text-success"></i><span id="mobile-people">1 personne</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Boutons d'action -->
+                            <div class="d-flex justify-content-between mb-3">
+                                <a th:href="@{'/destinations/' + ${destination.id}}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calendar-check me-2"></i>Réserver maintenant
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panneau latéral -->
+            <div class="col-lg-4">
+                <!-- Récapitulatif de la réservation -->
+                <div class="card shadow-sm sticky-top mb-4" style="top: 20px; z-index: 1;">
+                    <div class="card-header bg-white">
+                        <h3 class="card-title h5 mb-0">
+                            <i class="fas fa-receipt me-2 text-primary"></i>Récapitulatif
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="flex-shrink-0 me-3">
+                                <div class="bg-light rounded-circle p-3" style="width: 60px; height: 60px;">
+                                    <i class="fas fa-map-marker-alt fa-2x text-primary"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="h5 mb-1" th:text="${destination.name}">Nom de la destination</h4>
+                                <p class="text-muted mb-0" th:text="${destination.city} + ', ' + ${destination.country}">Paris, France</p>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-3">
+                        
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="fas fa-calendar-alt me-2 text-primary"></i>Arrivée</span>
+                                <span id="recap-start-date" class="text-end">-</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="fas fa-calendar-alt me-2 text-primary"></i>Départ</span>
+                                <span id="recap-end-date" class="text-end">-</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="fas fa-moon me-2 text-primary"></i>Durée</span>
+                                <span id="recap-duration" class="text-end">- nuits</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span><i class="fas fa-users me-2 text-primary"></i>Participants</span>
+                                <span id="recap-people" class="text-end">1 personne</span>
+                            </li>
+                        </ul>
+                        
+                        <div id="recap-availability" class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Sélectionnez vos dates pour vérifier la disponibilité
+                        </div>
+                        
+                        <!-- Prix estimé si disponible -->
+                        <div id="price-section" class="d-none">
+                            <hr class="my-3">
+                            <h5>Prix estimé</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>Prix par nuit</span>
+                                <span>100 €</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span><span id="price-nights">3</span> nuits</span>
+                                <span id="price-subtotal">300 €</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3 fw-bold">
+                                <span>Total</span>
+                                <span id="price-total" class="fs-5">300 €</span>
+                            </div>
+                            <small class="text-muted d-block mb-3">Toutes taxes comprises</small>
+                            
+                            <button type="button" id="reserve-btn" class="btn btn-success w-100 mb-3 d-none" onclick="document.querySelector('form').submit();">
+                                <i class="fas fa-check-circle me-2"></i>Réserver maintenant
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informations utiles -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h3 class="card-title h5 mb-0">
+                            <i class="fas fa-info-circle me-2 text-primary"></i>Informations utiles
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle me-2 text-success"></i>Annulation gratuite jusqu'à 7 jours avant l'arrivée
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle me-2 text-success"></i>Confirmation immédiate
+                            </li>
+                            <li class="mb-3">
+                                <i class="fas fa-check-circle me-2 text-success"></i>Les principales cartes de crédit sont acceptées
+                            </li>
+                            <li>
+                                <i class="fas fa-check-circle me-2 text-success"></i>Service client disponible 24h/24 et 7j/7
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pied de page -->
+    <footer th:replace="fragments/layout :: footer"></footer>
+    
+    <!-- Scripts -->
+    <div th:replace="fragments/layout :: scripts"></div>
+    
+    <script th:inline="javascript">
+        // Script pour vérifier la disponibilité des dates et mettre à jour le récapitulatif
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const numberOfPeopleInput = document.getElementById('numberOfPeople');
+            const availabilityMessage = document.getElementById('availability-message');
+            const recapAvailability = document.getElementById('recap-availability');
+            const destinationId = /*[[${destination.id}]]*/ '0';
+            
+            // Éléments du récapitulatif
+            const recapStartDate = document.getElementById('recap-start-date');
+            const recapEndDate = document.getElementById('recap-end-date');
+            const recapDuration = document.getElementById('recap-duration');
+            const recapPeople = document.getElementById('recap-people');
+            const mobileDates = document.getElementById('mobile-dates');
+            const mobilePeople = document.getElementById('mobile-people');
+            const priceSection = document.getElementById('price-section');
+            const priceNights = document.getElementById('price-nights');
+            const priceSubtotal = document.getElementById('price-subtotal');
+            const priceTotal = document.getElementById('price-total');
+            const reserveBtn = document.getElementById('reserve-btn');
+            
+            // Date minimale = aujourd'hui
+            const today = new Date().toISOString().split('T')[0];
+            startDateInput.setAttribute('min', today);
+            
+            function updateRecap() {
+                const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+                const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+                const people = numberOfPeopleInput.value;
+                
+                // Mise à jour des dates
+                if (startDate) {
+                    const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+                    recapStartDate.textContent = startDate.toLocaleDateString('fr-FR', options);
+                    // Date minimale de départ = date d'arrivée + 1 jour
+                    const minEndDate = new Date(startDate);
+                    minEndDate.setDate(minEndDate.getDate() + 1);
+                    endDateInput.setAttribute('min', minEndDate.toISOString().split('T')[0]);
+                }
+                
+                if (endDate) {
+                    const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' };
+                    recapEndDate.textContent = endDate.toLocaleDateString('fr-FR', options);
+                }
+                
+                // Calcul et affichage de la durée
+                if (startDate && endDate && startDate <= endDate) {
+                    const diffTime = Math.abs(endDate - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    recapDuration.textContent = diffDays + (diffDays > 1 ? ' nuits' : ' nuit');
+                    
+                    // Mise à jour des prix
+                    if (diffDays > 0) {
+                        priceSection.classList.remove('d-none');
+                        priceNights.textContent = diffDays;
+                        const subtotal = diffDays * 100; // Prix fictif de 100€ par nuit
+                        priceSubtotal.textContent = subtotal + ' €';
+                        priceTotal.textContent = subtotal + ' €';
+                    }
+                    
+                    // Mise à jour du récap mobile
+                    if (mobileDates) {
+                        const formattedStart = startDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+                        const formattedEnd = endDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+                        mobileDates.textContent = `${formattedStart} - ${formattedEnd} (${diffDays} nuit${diffDays > 1 ? 's' : ''})`;
+                    }
+                }
+                
+                // Mise à jour du nombre de personnes
+                if (people) {
+                    recapPeople.textContent = people + (people > 1 ? ' personnes' : ' personne');
+                    if (mobilePeople) {
+                        mobilePeople.textContent = people + (people > 1 ? ' personnes' : ' personne');
+                    }
+                }
+            }
+            
+            function checkAvailability() {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                
+                if (!startDate || !endDate || startDate > endDate) {
+                    return;
+                }
+                
+                availabilityMessage.style.display = 'block';
+                availabilityMessage.innerHTML = '<i class="fas fa-clock me-2"></i>Vérification de la disponibilité...';
+                availabilityMessage.className = 'alert alert-warning mb-4';
+                
+                recapAvailability.innerHTML = '<i class="fas fa-clock me-2"></i>Vérification de la disponibilité...';
+                recapAvailability.className = 'alert alert-warning mb-3';
+                
+                fetch(`/reservations/check-availability?destinationId=${destinationId}&startDate=${startDate}&endDate=${endDate}`)
+                    .then(response => response.json())
+                    .then(available => {
+                        if (available) {
+                            availabilityMessage.innerHTML = '<i class="fas fa-check-circle me-2"></i>Ces dates sont disponibles !';
+                            availabilityMessage.className = 'alert alert-success mb-4';
+                            
+                            recapAvailability.innerHTML = '<i class="fas fa-check-circle me-2"></i>Disponible pour ces dates';
+                            recapAvailability.className = 'alert alert-success mb-3';
+                            
+                            // Afficher le bouton de réservation rapide
+                            reserveBtn.classList.remove('d-none');
+                        } else {
+                            availabilityMessage.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Destination non disponible pour ces dates. Veuillez choisir d\'autres dates.';
+                            availabilityMessage.className = 'alert alert-danger mb-4';
+                            
+                            recapAvailability.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Non disponible pour ces dates';
+                            recapAvailability.className = 'alert alert-danger mb-3';
+                            
+                            // Cacher le bouton de réservation rapide
+                            reserveBtn.classList.add('d-none');
+                        }
+                    })
+                    .catch(error => {
+                        availabilityMessage.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erreur lors de la vérification de disponibilité. Veuillez réessayer.';
+                        availabilityMessage.className = 'alert alert-danger mb-4';
+                        
+                        recapAvailability.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Erreur de vérification';
+                        recapAvailability.className = 'alert alert-danger mb-3';
+                    });
+            }
+            
+            // Validation du formulaire
+            const form = document.querySelector('form.needs-validation');
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+            
+            // Fonctions pour les boutons + et - du nombre de personnes
+            window.incrementPeople = function() {
+                const input = document.getElementById('numberOfPeople');
+                if (input.value < 20) {
+                    input.value = parseInt(input.value) + 1;
+                    input.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            window.decrementPeople = function() {
+                const input = document.getElementById('numberOfPeople');
+                if (input.value > 1) {
+                    input.value = parseInt(input.value) - 1;
+                    input.dispatchEvent(new Event('change'));
+                }
+            }
+            
+            // Mise à jour lors des changements
+            startDateInput.addEventListener('change', function() {
+                updateRecap();
+                checkAvailability();
+            });
+            
+            endDateInput.addEventListener('change', function() {
+                updateRecap();
+                checkAvailability();
+            });
+            
+            numberOfPeopleInput.addEventListener('change', updateRecap);
+            
+            // Initialisation
+            updateRecap();
+        });
+    </script>
+</body>
+</html>
