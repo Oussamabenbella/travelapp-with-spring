@@ -1,4 +1,4 @@
-name: TravelApp CI
+name: TravelApp Ci
 
 on:
   push:
