@@ -1,10 +1,12 @@
 package com.example.travelappv2.config;
 
 import jakarta.persistence.EntityManagerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -21,14 +23,10 @@ import java.util.Map;
 @EnableTransactionManagement
 public class PostgresOnlyConfig {
 
-    @Value("${spring.datasource.url}")
-    private String url;
-
-    @Value("${spring.datasource.username}")
-    private String username;
-
-    @Value("${spring.datasource.password}")
-    private String password;
+    @Autowired
+    private Environment env;
+    
+    // Pas besoin d'injection de valeurs car on utilise directement l'Environment
 
     @Primary
     @Bean
@@ -36,9 +34,15 @@ public class PostgresOnlyConfig {
         // Utilisation explicite de DriverManagerDataSource pour éviter HikariCP
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(url);
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
+        dataSource.setUrl(env.getProperty("spring.datasource.url"));
+        dataSource.setUsername(env.getProperty("spring.datasource.username"));
+        dataSource.setPassword(env.getProperty("spring.datasource.password"));
+        
+        // Log pour le debugging
+        System.out.println("DATABASE URL: " + env.getProperty("spring.datasource.url"));
+        System.out.println("DATABASE USERNAME: " + env.getProperty("spring.datasource.username"));
+        System.out.println("DATABASE DRIVER: org.postgresql.Driver");
+        
         return dataSource;
     }
 
@@ -48,6 +52,7 @@ public class PostgresOnlyConfig {
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         vendorAdapter.setDatabase(Database.POSTGRESQL);
         vendorAdapter.setGenerateDdl(true);
+        vendorAdapter.setShowSql(true);
         
         LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
         factory.setJpaVendorAdapter(vendorAdapter);
@@ -60,6 +65,14 @@ public class PostgresOnlyConfig {
         properties.put("hibernate.temp.use_jdbc_metadata_defaults", false);
         properties.put("hibernate.format_sql", true);
         properties.put("hibernate.jdbc.lob.non_contextual_creation", true);
+        
+        // Désactiver explicitement la détection automatique des drivers
+        properties.put("hibernate.connection.provider_class", "org.hibernate.connection.DriverManagerConnectionProvider");
+        properties.put("hibernate.connection.driver_class", "org.postgresql.Driver");
+        properties.put("hibernate.connection.url", env.getProperty("spring.datasource.url"));
+        properties.put("hibernate.connection.username", env.getProperty("spring.datasource.username"));
+        properties.put("hibernate.connection.password", env.getProperty("spring.datasource.password"));
+        
         factory.setJpaPropertyMap(properties);
         
         return factory;
