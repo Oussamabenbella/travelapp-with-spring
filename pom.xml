@@ -40,8 +40,7 @@
         </dependency>
         <!-- Database Driver -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+
             <scope>runtime</scope>
         </dependency>
         <!-- Documentation API -->
